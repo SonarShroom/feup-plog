@@ -14,7 +14,7 @@ passar_turno :- turno(pretas), retract(turno(pretas)), assert(turno(brancas)).
 
 % Torre
 mover(torre, Xini, Yini, Xfin, Yfin) :- (Xini \= Xfin; Yini \= Yfin),
-										write("Pelo menos uma das coordenadas finais tem de ser igual às iniciais. (Só se pode mover a torre horizontal ou verticalmente)").
+										write("Pelo menos uma das coordenadas finais tem de ser igual às iniciais. (Só se pode mover a torre horizontal ou verticalmente)"), !.
 
 mover(torre, Xini, Yini, Xfin, Yfin) :- posicao_atual(torre1, E, Xini, Yini),
 										posicao_dentro_tabuleiro(Xfin, Yfin),
@@ -33,10 +33,10 @@ mover(torre, Xini, Yini, Xfin, Yfin) :- posicao_atual(torre2, E, Xini, Yini),
 % Bispo
 mover(bispo, Xini, Yini, DirHorizontal, DirVertical, Adder) :- (DirHorizontal \= 1; DirHorizontal \= -1),
 															   (DirVertical \= 1; DirVertical \= -1),
-															   write("Ambos a direção horizontal e vertical precisam de ter um valor de 1 ou -1.").
+															   write("Ambos a direção horizontal e vertical precisam de ter um valor de 1 ou -1."), !.
 															   
 mover(bispo, Xini, Yini, DirHorizontal, DirVertical, Adder) :- Adder = 0,
-															   write("O fator de multiplicação tem de ser diferente de zero.").
+															   write("O fator de multiplicação tem de ser diferente de zero."), !.
 
 mover(bispo, Xini, Yini, DirHorizontal, DirVertical, Adder) :- posicao_atual(bispo1, E, Xini, Yini),
 															   posicao_dentro_tabuleiro(Xini + (DirHorizontal * Adder), Yini + (DirVertical * Adder)),
@@ -57,10 +57,10 @@ mover(bispo, Xini, Yini, DirHorizontal, DirVertical, Adder) :- posicao_atual(bis
 % Rainha
 mover(rainha, Xini, Yini, DirHorizontal, DirVertical, Adder) :- (DirHorizontal > 1; DirHorizontal < -1),
 																(DirVertical > 1; DirVertical < -1),
-																write("Ambos a direção horizontal e vertical precisam de ter um valor de 1 ou -1.").
+																write("Ambos a direção horizontal e vertical precisam de ter um valor de 1 ou -1."), !.
 																
 mover(rainha, Xini, Yini, DirHorizontal, DirVertical, Adder) :- Adder = 0,
-																write("O fator de multiplicação tem de ser diferente de zero.").
+																write("O fator de multiplicação tem de ser diferente de zero."), !.
 
 mover(rainha, Xini, Yini, DirHorizontal, DirVertical, Adder) :- posicao_atual(rainha, E, Xini, Yini),
 																posicao_dentro_tabuleiro(Xini + (DirHorizontal * Adder), Yini + (DirVertical * Adder)),
@@ -73,7 +73,7 @@ mover(rainha, Xini, Yini, DirHorizontal, DirVertical, Adder) :- posicao_atual(ra
 % Rei
 mover(rainha, Xini, Yini, DirHorizontal, DirVertical) :- (DirHorizontal > 1; DirHorizontal < -1),
 														 (DirVertical > 1; DirVertical < -1),
-														  write("Ambos a direção horizontal e vertical precisam de ter um valor de 1 ou -1.").
+														  write("Ambos a direção horizontal e vertical precisam de ter um valor de 1 ou -1."), !.
 
 mover(rainha, Xini, Yini, DirHorizontal, DirVertical) :- posicao_atual(rei, E, Xini, Yini),
 														 posicao_dentro_tabuleiro(Xini + DirHorizontal, Yini + DirVertical),
@@ -84,7 +84,11 @@ mover(rainha, Xini, Yini, DirHorizontal, DirVertical) :- posicao_atual(rei, E, X
 														 assert(posicao_atual(rei, E, Xini + DirHorizontal, Yini + DirVertical)).
 														 
 % Cavalo
-mover(cavalo).
+mover(cavalo, Xini, Yini, HorizontalMult, VerticalMult) :- posicao_atual(cavalo1, E, Xini, Yini),
+														   posicao_dentro_tabuleiro(Xini + DirHorizontal, Yini + DirVertical),
+														   turno(E),
+														   (abs(HorizontalMult) =:= 2, abs(VerticalMult); 
+
 % Verificação da posicao dentro do tabuleiro
 posicao_dentro_tabuleiro(X, Y) :- X > 0, Y > 0, X <= 8, Y <= 8.
 
