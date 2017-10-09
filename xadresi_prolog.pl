@@ -1,11 +1,33 @@
 %	Implementação Xadresi em Prolog
-%	As peças são referenciadas pelo seu nome em todo o codigo.
+%	As peças são referenciadas em todo o codigo da seguinte maneira:
+%		1 - Rei Branco;
+%		2 - Rainha Branca;
+%		3 - Cavalo Branco;
+%		4 - Torre Branca;
+%		5 - Bispo Branco;
+%		6 - Rei Preto;
+%		7 - Rainha Preta;
+%		8 - Cavalo Preto;
+%		9 - Torre Preta;
+%		10 - Bispo Preto;
 %	Todas as declarações ":- dynamic xxx/Y" indicam predicados que são retracted, ou asserted ao longo da execução.
 
 % Estado inicial do jogo
+% Turno
 :- dynamic turno/1.
 turno(brancas).
 
+% Tabuleiro (inicialmente encontra-se vazio)
+:- dynamic tabuleiro/1.
+tabuleiro([[0, 0, 0, 0, 0, 0, 0, 0],
+		   [0, 0, 0, 0, 0, 0, 0, 0],
+		   [0, 0, 0, 0, 0, 0, 0, 0],
+		   [0, 0, 0, 0, 0, 0, 0, 0],
+		   [0, 0, 0, 0, 0, 0, 0, 0],
+		   [0, 0, 0, 0, 0, 0, 0, 0],
+		   [0, 0, 0, 0, 0, 0, 0, 0],
+		   [0, 0, 0, 0, 0, 0, 0, 0]]).
+		   
 % Passagem de turno
 passar_turno :- turno(brancas), retract(turno(brancas)), assert(turno(pretas)).
 passar_turno :- turno(pretas), retract(turno(pretas)), assert(turno(brancas)).
@@ -118,4 +140,12 @@ posicao_atual(cavalo2, preta, -1, -1).
 posicao_atual(rei, preta, -1, -1).
 posicao_atual(rainha, preta, -1, -1).
 
-% 
+% Code utilities
+% Replaces elements in a list: replace/4
+replace(_, _, [], []).
+replace(O, R, [O|T], [R|T2]) :- replace(O, R, T, T2).
+replace(O, R, [H|T], [H|T2]) :- dif(H,O), replace(O, R, T, T2).
+
+% Replaces at Y(sublist) line, and X(sublist element) column: replaceAt/4.
+replaceAt(X, Y, R, L) :- replaceAt(X, 1, Y, 1, R, L).
+replaceAt(X, XCount, Y, YCount, R, [L|T], [R|T2]) :- Y = YCount, 
