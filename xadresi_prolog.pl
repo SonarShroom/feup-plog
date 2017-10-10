@@ -1,5 +1,6 @@
 %	Implementação Xadresi em Prolog
 %	As peças são referenciadas em todo o codigo da seguinte maneira:
+%		0 - Casa vazia
 %		1 - Rei Branco;
 %		2 - Rainha Branca;
 %		3 - Cavalo Branco;
@@ -12,6 +13,9 @@
 %		10 - Bispo Preto;
 %	Todas as declarações ":- dynamic xxx/Y" indicam predicados que são retracted, ou asserted ao longo da execução.
 
+% Modulos externos
+:- use_module(library(lists)).
+
 % Estado inicial do jogo
 % Turno
 :- dynamic turno/1.
@@ -19,14 +23,14 @@ turno(brancas).
 
 % Tabuleiro (inicialmente encontra-se vazio)
 :- dynamic tabuleiro/1.
-tabuleiro([[0, 0, 0, 0, 0, 0, 0, 0],
-		   [0, 0, 0, 0, 0, 0, 0, 0],
-		   [0, 0, 0, 0, 0, 0, 0, 0],
-		   [0, 0, 0, 0, 0, 0, 0, 0],
-		   [0, 0, 0, 0, 0, 0, 0, 0],
-		   [0, 0, 0, 0, 0, 0, 0, 0],
-		   [0, 0, 0, 0, 0, 0, 0, 0],
-		   [0, 0, 0, 0, 0, 0, 0, 0]]).
+tabuleiro([0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0]).
 		   
 % Passagem de turno
 passar_turno :- turno(brancas), retract(turno(brancas)), assert(turno(pretas)).
@@ -141,11 +145,24 @@ posicao_atual(rei, preta, -1, -1).
 posicao_atual(rainha, preta, -1, -1).
 
 % Code utilities
-% Replaces elements in a list: replace/4
-replace(_, _, [], []).
-replace(O, R, [O|T], [R|T2]) :- replace(O, R, T, T2).
-replace(O, R, [H|T], [H|T2]) :- dif(H,O), replace(O, R, T, T2).
 
-% Replaces at Y(sublist) line, and X(sublist element) column: replaceAt/4.
-replaceAt(X, Y, R, L) :- replaceAt(X, 1, Y, 1, R, L).
-replaceAt(X, XCount, Y, YCount, R, [L|T], [R|T2]) :- Y = YCount, 
+% Substitui um elemento no tabuleiro dadas as suas coordenadas X, Y: replaceOnChessboard/3
+replaceOnChessboard(X, Y, R) :- Index is X + (Y - 1) * 8, tabuleiro(Tabuleiro), write(Index), replaceOnChessboard(Tabuleiro, Index, R, NovoTabuleiro).
+replaceOnChessboard([_|T], 0, R, [R|T]) :- retract(tabuleiro(_)), assert(tabuleiro([R|T])).
+replaceOnChessboard([H|T], Index, R, [H|T2]) :- write(Index), Index > 0, NIndex is Index - 1, replaceOnChessboard(T, NIndex, R, T2).
+
+% Escreve o tabuleiro no ecrã: writeChessboard/0
+
+writeChessboard :- writef(" _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n"),
+				   tabuleiro(T),
+				   writeChessboardLines(T).
+
+writeChessboardLines([]) :- !.				   
+writeChessboardLines(Chessboard) :- writef("|     |     |     |     |     |     |     |     |\n"),
+								writef("|"), writeChessElements(Chessboard, 1), writef("\n"),
+								writef("|_ _ _|_ _ _|_ _ _|_ _ _|_ _ _|_ _ _|_ _ _|_ _ _|\n").
+
+writeChessElements([], Count) :- !.
+writeChessElements([0|_]) :- writef("     |").
+writeChessElements([_|_], 9) :- !.
+writeChessElements([ChessHead]ChessTail], Count) :- write("Entry"), writeChessElements([ChessHead|ChessTail]), Count1 is Count + 1, writeChessElements(ChessTail, Count1).
