@@ -1,16 +1,16 @@
 %	Implementação Xadresi em Prolog
 %	As peças são referenciadas em todo o codigo da seguinte maneira:
-%		0 - Casa vazia
-%		1 - Rei Branco;
-%		2 - Rainha Branca;
-%		3 - Cavalo Branco;
-%		4 - Torre Branca;
-%		5 - Bispo Branco;
-%		6 - Rei Preto;
-%		7 - Rainha Preta;
-%		8 - Cavalo Preto;
-%		9 - Torre Preta;
-%		10 - Bispo Preto;
+%		0 - Casa vazia;
+%		1 - Rei Branco;		 R B 
+%		2 - Rainha Branca;	 RaB 
+%		3 - Cavalo Branco;	 C B 
+%		4 - Torre Branca;	 T B 
+%		5 - Bispo Branco;	 B B 
+%		6 - Rei Preto;		 R P 
+%		7 - Rainha Preta;	 RaP 
+%		8 - Cavalo Preto;	 C P 
+%		9 - Torre Preta;	 B P 
+%		10 - Bispo Preto;	 T P 
 %	Todas as declarações ":- dynamic xxx/Y" indicam predicados que são retracted, ou asserted ao longo da execução.
 
 % Modulos externos
@@ -159,9 +159,19 @@ writeChessboard :- writef(" _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n")
 
 writeChessboardLines([]) :- !.				   
 writeChessboardLines(Chessboard) :- writef("|     |     |     |     |     |     |     |     |\n"),
-									writef("|"), writeChessElements(Chessboard, 1), writef("\n").
+									writef("|"), writeChessElements(Chessboard, 1).
 
 writeChessElements([], 8) :- !.
 writeChessElements([0|_]) :- writef("     |").
+writeChessElements([1|_]) :- writef(" R B |").
+writeChessElements([2|_]) :- writef(" RaB |").
+writeChessElements([3|_]) :- writef(" C B |").
+writeChessElements([4|_]) :- writef(" T B |").
+writeChessElements([5|_]) :- writef(" B B |").
+writeChessElements([6|_]) :- writef(" R P |").
+writeChessElements([7|_]) :- writef(" RaP |").
+writeChessElements([8|_]) :- writef(" C P |").
+writeChessElements([9|_]) :- writef(" T P |").
+writeChessElements([10|_]) :- writef(" B P |").
 writeChessElements(ChessTail, 9) :- writef("\n|_ _ _|_ _ _|_ _ _|_ _ _|_ _ _|_ _ _|_ _ _|_ _ _|\n"), writeChessboardLines(ChessTail), !.
 writeChessElements([ChessHead|ChessTail], Count) :- writeChessElements([ChessHead|ChessTail]), Count1 is Count + 1, writeChessElements(ChessTail, Count1).
