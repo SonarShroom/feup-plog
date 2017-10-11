@@ -159,10 +159,9 @@ writeChessboard :- writef(" _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n")
 
 writeChessboardLines([]) :- !.				   
 writeChessboardLines(Chessboard) :- writef("|     |     |     |     |     |     |     |     |\n"),
-								writef("|"), writeChessElements(Chessboard, 1), writef("\n"),
-								writef("|_ _ _|_ _ _|_ _ _|_ _ _|_ _ _|_ _ _|_ _ _|_ _ _|\n").
+									writef("|"), writeChessElements(Chessboard, 1), writef("\n").
 
-writeChessElements([], Count) :- !.
+writeChessElements([], 8) :- !.
 writeChessElements([0|_]) :- writef("     |").
-writeChessElements([_|_], 9) :- !.
-writeChessElements([ChessHead]ChessTail], Count) :- write("Entry"), writeChessElements([ChessHead|ChessTail]), Count1 is Count + 1, writeChessElements(ChessTail, Count1).
+writeChessElements(ChessTail, 9) :- writef("\n|_ _ _|_ _ _|_ _ _|_ _ _|_ _ _|_ _ _|_ _ _|_ _ _|\n"), writeChessboardLines(ChessTail), !.
+writeChessElements([ChessHead|ChessTail], Count) :- writeChessElements([ChessHead|ChessTail]), Count1 is Count + 1, writeChessElements(ChessTail, Count1).
