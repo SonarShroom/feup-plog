@@ -23,18 +23,39 @@ turno(brancas).
 
 % Tabuleiro (inicialmente encontra-se vazio)
 :- dynamic tabuleiro/1.
-tabuleiro([0, 0, 0, 0, 0, 0, 0, 0,
-		   0, 0, 0, 0, 0, 0, 0, 0,
-		   0, 0, 0, 0, 0, 0, 0, 0,
-		   0, 0, 0, 0, 0, 0, 0, 0,
-		   0, 0, 0, 0, 0, 0, 0, 0,
-		   0, 0, 0, 0, 0, 0, 0, 0,
-		   0, 0, 0, 0, 0, 0, 0, 0,
-		   0, 0, 0, 0, 0, 0, 0, 0]).
+tabuleiro([[0, 0, 0, 0, 0, 0, 0, 0],
+		   [0, 0, 0, 0, 0, 0, 0, 0],
+		   [0, 0, 0, 0, 0, 0, 0, 0],
+		   [0, 0, 0, 0, 0, 0, 0, 0],
+		   [0, 0, 0, 0, 0, 0, 0, 0],
+		   [0, 0, 0, 0, 0, 0, 0, 0],
+		   [0, 0, 0, 0, 0, 0, 0, 0],
+		   [0, 0, 0, 0, 0, 0, 0, 0]]).
 		   
 % Passagem de turno
 passar_turno :- turno(brancas), retract(turno(brancas)), assert(turno(pretas)).
 passar_turno :- turno(pretas), retract(turno(pretas)), assert(turno(brancas)).
+
+% Quantidade de peças de cada equipa
+:- dynamic quantidade_de_pecas/3.
+quantidade_de_pecas(rei, brancas, 1).
+quantidade_de_pecas(rainha, brancas, 1).
+quantidade_de_pecas(cavalo, brancas, 2).
+quantidade_de_pecas(torre, brancas, 2).
+quantidade_de_pecas(bispo, brancas, 2).
+quantidade_de_pecas(rei, pretas, 1).
+quantidade_de_pecas(rainha, pretas, 1).
+quantidade_de_pecas(cavalo, pretas, 2).
+quantidade_de_pecas(torre, pretas, 2).
+quantidade_de_pecas(bispo, pretas, 2).
+
+% Posicionamento das peças
+posicionar_peca(P, _, _) :- quantidade_de_pecas(P, _, X), X = 0, write("No more pieces left of that type.");
+posicionar_peca(rei, X, Y) :- turno(E), replaceOnChessboard(1, X, Y), retract(quantidade_de_pecas(rei, E, 1)), assert(quantidade_de_pecas(rei, E, 0)).
+posicionar_peca(rainha, X, Y) :- turno(E), replaceOnChessboard(2, X, Y), retract(quantidade_de_pecas(rainha, E, 1)), assert(quantidade_de_pecas(rainha, E, 0)).
+posicionar_peca(cavalo, X, Y) :- turno(E), replaceOnChessboard(3, X, Y), retract(quantidade_de_pecas(cavalo, E, Q)), assert(quantidade_de_pecas(rainha, E, Q - 1)).
+posicionar_peca(torre, X, Y) :- turno(E), replaceOnChessboard(4, X, Y), retract(quantidade_de_pecas(torre, E, Q)), assert(quantidade_de_pecas(rainha, E, Q - 1)).
+posicionar_peca(bispo, X, Y) :- turno(E), replaceOnChessboard(5, X, Y), retract(quantidade_de_pecas(bispo, E, Q)), assert(quantidade_de_pecas(rainha, E, Q - 1)).
 
 % Regras de movimentação das peças
 
@@ -122,56 +143,47 @@ posicao_dentro_tabuleiro(X, Y) :- X > 0, Y > 0, X <= 8, Y <= 8.
 cor_da_casa(X, Y, branca) :- Y mod 2 =:= 1, (X - 1) mod 2 =:= 0.
 cor_da_casa(X, Y, preta) :- \+ cor_da_casa(X, Y, branca).
 
-
-% Posicionamento atual das peças (inicialmente não estão posicionados)
-:- dynamic posicao_atual/4.
-
-posicao_atual(torre1, branca, -1, -1).
-posicao_atual(torre2, branca, -1, -1).
-posicao_atual(bispo1, branca, -1, -1).
-posicao_atual(bispo2, branca, -1, -1).
-posicao_atual(cavalo1, branca, -1, -1).
-posicao_atual(cavalo2, branca, -1, -1).
-posicao_atual(rei, branca, -1, -1).
-posicao_atual(rainha, branca, -1, -1).
-
-posicao_atual(torre1, preta, -1, -1).
-posicao_atual(torre2, preta, -1, -1).
-posicao_atual(bispo1, preta, -1, -1).
-posicao_atual(bispo2, preta, -1, -1).
-posicao_atual(cavalo1, preta, -1, -1).
-posicao_atual(cavalo2, preta, -1, -1).
-posicao_atual(rei, preta, -1, -1).
-posicao_atual(rainha, preta, -1, -1).
-
 % Code utilities
 
-% Substitui um elemento no tabuleiro dadas as suas coordenadas X, Y: replaceOnChessboard/3
-replaceOnChessboard(X, Y, R) :- Index is X + (Y - 1) * 8, tabuleiro(Tabuleiro), write(Index), replaceOnChessboard(Tabuleiro, Index, R, NovoTabuleiro).
-replaceOnChessboard([_|T], 0, R, [R|T]) :- retract(tabuleiro(_)), assert(tabuleiro([R|T])).
-replaceOnChessboard([H|T], Index, R, [H|T2]) :- write(Index), Index > 0, NIndex is Index - 1, replaceOnChessboard(T, NIndex, R, T2).
+% Substitui um elemento numa matriz dadas as suas coordenadas X, Y: replace/5
+replace( [L|Ls] , 1 , Y , Z , [R|Ls] ) :- % once we find the desired row,
+  replace_column(L,Y,Z,R), !.			  % - we replace specified column, and we're done.
+replace( [L|Ls] , X , Y , Z , [L|Rs] ) :- % if we haven't found the desired row yet
+  X > 1,                                  % - and the row offset is positive,
+  X1 is X-1,                              % - we decrement the row offset
+  replace( Ls , X1 , Y , Z , Rs ).		  % - and recurse down
+
+replace_column( [_|Cs] , 1 , Z , [Z|Cs] ) .  % once we find the specified offset, just make the substitution and finish up.
+replace_column( [C|Cs] , Y , Z , [C|Rs] ) :- % otherwise,
+  Y > 1,                                     % - assuming that the column offset is positive,
+  Y1 is Y-1,                                 % - we decrement it
+  replace_column( Cs , Y1 , Z , Rs ).		 % - and recurse down.
+  
+% Substitui um elemento no tabuleiro dadas as coordenadas X, Y: replaceOnChessboard/3
+replaceOnChessboard(P, X, Y) :- tabuleiro(T), replace(T, X, Y, P, T2), retract(tabuleiro(_)), assert(tabuleiro(T2)).
 
 % Escreve o tabuleiro no ecrã: writeChessboard/0
-
 writeChessboard :- writef(" _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n"),
 				   tabuleiro(T),
-				   writeChessboardLines(T).
+				   writeChessboardLines(T, 1).
 
-writeChessboardLines([]) :- !.				   
-writeChessboardLines(Chessboard) :- writef("|     |     |     |     |     |     |     |     |\n"),
-									writef("|"), writeChessElements(Chessboard, 1).
+writeChessboardLines(_, 9) :- !.
+writeChessboardLines([ChessHead|ChessTail], Count) :- writef("|     |     |     |     |     |     |     |     |\n"),
+													  writef("|"), writeChessElements(ChessHead, 1),
+													  writef("\n|_ _ _|_ _ _|_ _ _|_ _ _|_ _ _|_ _ _|_ _ _|_ _ _|\n"),
+													  Count1 is Count + 1,
+													  writeChessboardLines(ChessTail, Count1).
 
-writeChessElements([], 8) :- !.
-writeChessElements([0|_]) :- writef("     |").
-writeChessElements([1|_]) :- writef(" R B |").
-writeChessElements([2|_]) :- writef(" RaB |").
-writeChessElements([3|_]) :- writef(" C B |").
-writeChessElements([4|_]) :- writef(" T B |").
-writeChessElements([5|_]) :- writef(" B B |").
-writeChessElements([6|_]) :- writef(" R P |").
-writeChessElements([7|_]) :- writef(" RaP |").
-writeChessElements([8|_]) :- writef(" C P |").
-writeChessElements([9|_]) :- writef(" T P |").
-writeChessElements([10|_]) :- writef(" B P |").
-writeChessElements(ChessTail, 9) :- writef("\n|_ _ _|_ _ _|_ _ _|_ _ _|_ _ _|_ _ _|_ _ _|_ _ _|\n"), writeChessboardLines(ChessTail), !.
+writeChessElements([0|ChessTail]) :- writef("     |").
+writeChessElements([1|ChessTail]) :- writef(" R B |").
+writeChessElements([2|ChessTail]) :- writef(" RaB |").
+writeChessElements([3|ChessTail]) :- writef(" C B |").
+writeChessElements([4|ChessTail]) :- writef(" T B |").
+writeChessElements([5|ChessTail]) :- writef(" B B |").
+writeChessElements([6|ChessTail]) :- writef(" R P |").
+writeChessElements([7|ChessTail]) :- writef(" RaP |").
+writeChessElements([8|ChessTail]) :- writef(" C P |").
+writeChessElements([9|ChessTail]) :- writef(" T P |").
+writeChessElements([10|ChessTail]) :- writef(" B P |").
+writeChessElements(_, 9) :- !.
 writeChessElements([ChessHead|ChessTail], Count) :- writeChessElements([ChessHead|ChessTail]), Count1 is Count + 1, writeChessElements(ChessTail, Count1).
