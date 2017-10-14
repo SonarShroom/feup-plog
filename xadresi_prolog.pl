@@ -50,12 +50,12 @@ quantidade_de_pecas(torre, pretas, 2).
 quantidade_de_pecas(bispo, pretas, 2).
 
 % Posicionamento das peças
-posicionar_peca(P, _, _) :- quantidade_de_pecas(P, _, X), X = 0, write("No more pieces left of that type.");
-posicionar_peca(rei, X, Y) :- turno(E), replaceOnChessboard(1, X, Y), retract(quantidade_de_pecas(rei, E, 1)), assert(quantidade_de_pecas(rei, E, 0)).
-posicionar_peca(rainha, X, Y) :- turno(E), replaceOnChessboard(2, X, Y), retract(quantidade_de_pecas(rainha, E, 1)), assert(quantidade_de_pecas(rainha, E, 0)).
-posicionar_peca(cavalo, X, Y) :- turno(E), replaceOnChessboard(3, X, Y), retract(quantidade_de_pecas(cavalo, E, Q)), assert(quantidade_de_pecas(rainha, E, Q - 1)).
-posicionar_peca(torre, X, Y) :- turno(E), replaceOnChessboard(4, X, Y), retract(quantidade_de_pecas(torre, E, Q)), assert(quantidade_de_pecas(rainha, E, Q - 1)).
-posicionar_peca(bispo, X, Y) :- turno(E), replaceOnChessboard(5, X, Y), retract(quantidade_de_pecas(bispo, E, Q)), assert(quantidade_de_pecas(rainha, E, Q - 1)).
+posicionar_peca(P, _, _) :- turno(E), quantidade_de_pecas(P, E, X), X = 0, write("No more pieces left of that type.");
+posicionar_peca(rei, X, Y) :- turno(E), replaceOnChessboard(1, X, Y), write("Begin Retract"), retract(quantidade_de_pecas(rei, E, 1)), assert(quantidade_de_pecas(rei, E, 0)).
+posicionar_peca(rainha, X, Y) :- turno(E), replaceOnChessboard(2, X, Y), write("Begin Retract"), retract(quantidade_de_pecas(rainha, E, 1)), assert(quantidade_de_pecas(rainha, E, 0)).
+posicionar_peca(cavalo, X, Y) :- turno(E), replaceOnChessboard(3, X, Y), write("Begin Retract"), retract(quantidade_de_pecas(cavalo, E, Q)), assert(quantidade_de_pecas(rainha, E, Q - 1)).
+posicionar_peca(torre, X, Y) :- turno(E), replaceOnChessboard(4, X, Y), write("Begin Retract"), retract(quantidade_de_pecas(torre, E, Q)), assert(quantidade_de_pecas(rainha, E, Q - 1)).
+posicionar_peca(bispo, X, Y) :- turno(E), replaceOnChessboard(5, X, Y), write("Begin Retract"), retract(quantidade_de_pecas(bispo, E, Q)), assert(quantidade_de_pecas(rainha, E, Q - 1)).
 
 % Regras de movimentação das peças
 
@@ -140,7 +140,7 @@ mover(cavalo, Xini, Yini, HorizontalMult, VerticalMult) :- posicao_atual(cavalo1
 posicao_dentro_tabuleiro(X, Y) :- X > 0, Y > 0, X <= 8, Y <= 8.
 
 % Verificação da cor da casa
-cor_da_casa(X, Y, branca) :- Y mod 2 =:= 1, (X - 1) mod 2 =:= 0.
+cor_da_casa(X, Y, branca) :- Y mod 2 =:= 1, (X - 1) mod 2 =:= 0, !.
 cor_da_casa(X, Y, preta) :- \+ cor_da_casa(X, Y, branca).
 
 % Code utilities
@@ -165,25 +165,23 @@ replaceOnChessboard(P, X, Y) :- tabuleiro(T), replace(T, X, Y, P, T2), retract(t
 % Escreve o tabuleiro no ecrã: writeChessboard/0
 writeChessboard :- writef(" _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n"),
 				   tabuleiro(T),
-				   writeChessboardLines(T, 1).
+				   writeChessboardLines(T).
 
-writeChessboardLines(_, 9) :- !.
-writeChessboardLines([ChessHead|ChessTail], Count) :- writef("|     |     |     |     |     |     |     |     |\n"),
-													  writef("|"), writeChessElements(ChessHead, 1),
+writeChessboardLines([]) :- !.
+writeChessboardLines([ChessHead|ChessTail]) :- writef("|     |     |     |     |     |     |     |     |\n"),
+													  writef("|"), writeChessElements(ChessHead),
 													  writef("\n|_ _ _|_ _ _|_ _ _|_ _ _|_ _ _|_ _ _|_ _ _|_ _ _|\n"),
-													  Count1 is Count + 1,
-													  writeChessboardLines(ChessTail, Count1).
+													  writeChessboardLines(ChessTail).
 
-writeChessElements([0|ChessTail]) :- writef("     |").
-writeChessElements([1|ChessTail]) :- writef(" R B |").
-writeChessElements([2|ChessTail]) :- writef(" RaB |").
-writeChessElements([3|ChessTail]) :- writef(" C B |").
-writeChessElements([4|ChessTail]) :- writef(" T B |").
-writeChessElements([5|ChessTail]) :- writef(" B B |").
-writeChessElements([6|ChessTail]) :- writef(" R P |").
-writeChessElements([7|ChessTail]) :- writef(" RaP |").
-writeChessElements([8|ChessTail]) :- writef(" C P |").
-writeChessElements([9|ChessTail]) :- writef(" T P |").
-writeChessElements([10|ChessTail]) :- writef(" B P |").
-writeChessElements(_, 9) :- !.
-writeChessElements([ChessHead|ChessTail], Count) :- writeChessElements([ChessHead|ChessTail]), Count1 is Count + 1, writeChessElements(ChessTail, Count1).
+writeChessElements([]) :- !.
+writeChessElements([0|ChessTail]) :- writef("     |"), writeChessElements(ChessTail).
+writeChessElements([1|ChessTail]) :- writef(" R B |"), writeChessElements(ChessTail).
+writeChessElements([2|ChessTail]) :- writef(" RaB |"), writeChessElements(ChessTail).
+writeChessElements([3|ChessTail]) :- writef(" C B |"), writeChessElements(ChessTail).
+writeChessElements([4|ChessTail]) :- writef(" T B |"), writeChessElements(ChessTail).
+writeChessElements([5|ChessTail]) :- writef(" B B |"), writeChessElements(ChessTail).
+writeChessElements([6|ChessTail]) :- writef(" R P |"), writeChessElements(ChessTail).
+writeChessElements([7|ChessTail]) :- writef(" RaP |"), writeChessElements(ChessTail).
+writeChessElements([8|ChessTail]) :- writef(" C P |"), writeChessElements(ChessTail).
+writeChessElements([9|ChessTail]) :- writef(" T P |"), writeChessElements(ChessTail).
+writeChessElements([10|ChessTail]) :- writef(" B P |"), writeChessElements(ChessTail).
