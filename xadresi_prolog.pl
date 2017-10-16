@@ -50,12 +50,12 @@ quantidade_de_pecas(torre, pretas, 2).
 quantidade_de_pecas(bispo, pretas, 2).
 
 % Posicionamento das peças
-posicionar_peca(P, _, _) :- turno(E), quantidade_de_pecas(P, E, X), X = 0, write("No more pieces left of that type.");
-posicionar_peca(rei, X, Y) :- turno(E), replaceOnChessboard(1, X, Y), write("Begin Retract"), retract(quantidade_de_pecas(rei, E, 1)), assert(quantidade_de_pecas(rei, E, 0)).
-posicionar_peca(rainha, X, Y) :- turno(E), replaceOnChessboard(2, X, Y), write("Begin Retract"), retract(quantidade_de_pecas(rainha, E, 1)), assert(quantidade_de_pecas(rainha, E, 0)).
-posicionar_peca(cavalo, X, Y) :- turno(E), replaceOnChessboard(3, X, Y), write("Begin Retract"), retract(quantidade_de_pecas(cavalo, E, Q)), assert(quantidade_de_pecas(rainha, E, Q - 1)).
-posicionar_peca(torre, X, Y) :- turno(E), replaceOnChessboard(4, X, Y), write("Begin Retract"), retract(quantidade_de_pecas(torre, E, Q)), assert(quantidade_de_pecas(rainha, E, Q - 1)).
-posicionar_peca(bispo, X, Y) :- turno(E), replaceOnChessboard(5, X, Y), write("Begin Retract"), retract(quantidade_de_pecas(bispo, E, Q)), assert(quantidade_de_pecas(rainha, E, Q - 1)).
+posicionar_peca(P, _, _) :- turno(E), quantidade_de_pecas(P, E, X), X =:= 0, write("Não existem mais peças deste tipo."), !.
+posicionar_peca(rei, X, Y) :- turno(E), replaceOnChessboard(1, X, Y), retract(quantidade_de_pecas(rei, E, 1)), assert(quantidade_de_pecas(rei, E, 0)).
+posicionar_peca(rainha, X, Y) :- turno(E), replaceOnChessboard(2, X, Y), retract(quantidade_de_pecas(rainha, E, 1)), assert(quantidade_de_pecas(rainha, E, 0)).
+posicionar_peca(cavalo, X, Y) :- turno(E), replaceOnChessboard(3, X, Y), retract(quantidade_de_pecas(cavalo, E, Q)), assert(quantidade_de_pecas(rainha, E, Q - 1)).
+posicionar_peca(torre, X, Y) :- turno(E), replaceOnChessboard(4, X, Y), retract(quantidade_de_pecas(torre, E, Q)), assert(quantidade_de_pecas(rainha, E, Q - 1)).
+posicionar_peca(bispo, X, Y) :- turno(E), replaceOnChessboard(5, X, Y), retract(quantidade_de_pecas(bispo, E, Q)), assert(quantidade_de_pecas(rainha, E, Q - 1)).
 
 % Regras de movimentação das peças
 
