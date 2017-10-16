@@ -21,6 +21,11 @@
 :- dynamic turno/1.
 turno(brancas).
 
+% Pontuação
+:- dynamic pontos/2.
+pontos(brancas, 0).
+pontos(pretas, 0).
+
 % Tabuleiro (inicialmente encontra-se vazio)
 :- dynamic tabuleiro/1.
 tabuleiro([[0, 0, 0, 0, 0, 0, 0, 0],
@@ -134,7 +139,20 @@ mover(rainha, Xini, Yini, DirHorizontal, DirVertical) :- posicao_atual(rei, E, X
 mover(cavalo, Xini, Yini, HorizontalMult, VerticalMult) :- posicao_atual(cavalo1, E, Xini, Yini),
 														   posicao_dentro_tabuleiro(Xini + DirHorizontal, Yini + DirVertical),
 														   turno(E),
-														   (abs(HorizontalMult) =:= 2, abs(VerticalMult); 
+														   (abs(HorizontalMult) =:= 2, abs(VerticalMult).
+														   
+% Rotina de cálculo de ataque
+executar_ataques :- tabuleiro(T), verificar_ataques_linha(T, 1).
+verificar_ataques_linha([], _) :- writef("Verificacao do tabuleiro concluida.\n"), !.
+verificar_ataques_linha([H|T], Y) :- verificar_ataques_coluna(H, 1, Y), Y1 is Y + 1, verificar_ataques_linha(T, Y1).
+verificar_ataques_coluna([], _, _) :- writef("Verificacao de linha concluida.\n"), !.
+verificar_ataques_coluna([H|T], X, Y) :- ataque(H, X, Y), X1 is X + 1, verificar_ataques_coluna(T, X1, Y).
+
+verificar_peca_ataca(PAtacante, PDefensora) :- PAtacante \= 0, PDefensora \= 0, (PAtacante > 5, PDefensora < 5; PAtacante < 5, PDefensora > 5).
+
+% Regras de ataque
+% Rei
+ataque(1, X, Y) :- tabuleiro(T), nth1(Y - 1, T, LinhaAnterior), nth1(Y, T, LinhaAtual), nth1(Y + 1, T, LinhaSeguinte),
 
 % Verificação da posicao dentro do tabuleiro
 posicao_dentro_tabuleiro(X, Y) :- X > 0, Y > 0, X <= 8, Y <= 8.
