@@ -41,8 +41,8 @@ mudar_modo_de_jogo(_) :- writef("Este modo de jogo não existe/não é suportado
 
 % Tabuleiro (inicialmente encontra-se vazio)
 :- dynamic tabuleiro/1.
-tabuleiro([[1, 2, 0, 0, 0, 0, 0, 9],
-		   [8, 0, 0, 0, 0, 0, 0, 0],
+tabuleiro([[0, 0, 0, 0, 0, 0, 0, 0],
+		   [0, 0, 0, 0, 0, 0, 0, 0],
 		   [0, 0, 0, 0, 0, 0, 0, 0],
 		   [0, 0, 0, 0, 0, 0, 0, 0],
 		   [0, 0, 0, 0, 0, 0, 0, 0],
@@ -77,7 +77,8 @@ posicionar_peca(bispo, X, Y) :- turno(E), replaceOnChessboard(5, X, Y), retract(
 														   
 % Ciclo de jogo
 ciclo_de_jogo(Tabuleiro) :- modo_de_jogo_atual(humano_vs_humano), !,
-							retract(tabuleiro(_)), assert(tabuleiro(Tabuleiro)).
+							retract(tabuleiro(_)), assert(tabuleiro(Tabuleiro)),
+							passar_turno.
 							
 % Rotina de cálculo de ataque
 executar_ataques :- tabuleiro(T), verificar_ataques_linha(T, 1, T).
@@ -112,8 +113,6 @@ ataque(8, X, Y, T) :- atk_horse_positions(8, X, Y, T).
 ataque(4, X, Y, T) :- atk_cross_positions(4, X, Y, 7, T).
 ataque(9, X, Y, T) :- atk_cross_positions(9, X, Y, 7, T).
 
-
-										  
 % Bispo
 ataque(5, X, Y, T) :- atk_cross_bishop_positions(5, X, Y, 7, T).
 ataque(10, X, Y, T) :- atk_cross_bishop_positions(10, X, Y, 7, T).
