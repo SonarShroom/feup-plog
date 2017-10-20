@@ -26,6 +26,19 @@ turno(brancas).
 pontos(brancas, 0).
 pontos(pretas, 0).
 
+% Modos de jogo
+% Modo de jogo atual
+:- dynamic modo_de_jogo_atual/1.
+modo_de_jogo_atual(humano_vs_humano).
+
+% Mudar modo de jogo
+% mudar_modo_de_jogo(X) :- jogo_iniciado(t), writef("O jogo já foi iniciado e não é permitido mudar o modo."), !.
+mudar_modo_de_jogo(humano_vs_humano) :- retract(modo_de_jogo_atual(_)), assert(modo_de_jogo_atual(humano_vs_humano)), !.
+mudar_modo_de_jogo(humano_vs_computador) :- retract(modo_de_jogo_atual(_)), assert(modo_de_jogo_atual(humano_vs_computador)), !.
+mudar_modo_de_jogo(computador_vs_computador) :- retract(modo_de_jogo_atual(_)), assert(modo_de_jogo_atual(computador_vs_computador)), !.
+mudar_modo_de_jogo(X) :- writef("Este modo de jogo não existe/não é suportado: \nOs seguintes modos de jogo estão implementados: \n\n humano_vs_humano \n\n humano_vs_computador \n\n computador_vs_computador").
+
+
 % Tabuleiro (inicialmente encontra-se vazio)
 :- dynamic tabuleiro/1.
 tabuleiro([[0, 0, 0, 0, 0, 0, 0, 0],
@@ -61,86 +74,11 @@ posicionar_peca(rainha, X, Y) :- turno(E), replaceOnChessboard(2, X, Y), retract
 posicionar_peca(cavalo, X, Y) :- turno(E), replaceOnChessboard(3, X, Y), retract(quantidade_de_pecas(cavalo, E, Q)), assert(quantidade_de_pecas(rainha, E, Q - 1)).
 posicionar_peca(torre, X, Y) :- turno(E), replaceOnChessboard(4, X, Y), retract(quantidade_de_pecas(torre, E, Q)), assert(quantidade_de_pecas(rainha, E, Q - 1)).
 posicionar_peca(bispo, X, Y) :- turno(E), replaceOnChessboard(5, X, Y), retract(quantidade_de_pecas(bispo, E, Q)), assert(quantidade_de_pecas(rainha, E, Q - 1)).
-
-% Regras de movimentação das peças
-
-% Torre
-mover(torre, Xini, Yini, Xfin, Yfin) :- (Xini \= Xfin; Yini \= Yfin),
-										write("Pelo menos uma das coordenadas finais tem de ser igual às iniciais. (Só se pode mover a torre horizontal ou verticalmente)"), !.
-
-mover(torre, Xini, Yini, Xfin, Yfin) :- posicao_atual(torre1, E, Xini, Yini),
-										posicao_dentro_tabuleiro(Xfin, Yfin),
-										(Xini =:= Xfin; Yini =:= Yfin),
-										turno(E),
-										retract(posicao_atual(torre1, E, Xini, Yini)),
-										assert(posicao_atual(torre1, E, Xfin, Yfin)).
-
-mover(torre, Xini, Yini, Xfin, Yfin) :- posicao_atual(torre2, E, Xini, Yini),
-										posicao_dentro_tabuleiro(Xfin, Yfin),
-										(Xini =:= Xfin; Yini =:= Yfin),
-										turno(E),
-										retract(posicao_atual(torre2, E, Xini, Yini)),
-										assert(posicao_atual(torre2, E, Xfin, Yfin)).
-
-% Bispo
-mover(bispo, Xini, Yini, DirHorizontal, DirVertical, Adder) :- (DirHorizontal \= 1; DirHorizontal \= -1),
-															   (DirVertical \= 1; DirVertical \= -1),
-															   write("Ambos a direção horizontal e vertical precisam de ter um valor de 1 ou -1."), !.
-															   
-mover(bispo, Xini, Yini, DirHorizontal, DirVertical, Adder) :- Adder = 0,
-															   write("O fator de multiplicação tem de ser diferente de zero."), !.
-
-mover(bispo, Xini, Yini, DirHorizontal, DirVertical, Adder) :- posicao_atual(bispo1, E, Xini, Yini),
-															   posicao_dentro_tabuleiro(Xini + (DirHorizontal * Adder), Yini + (DirVertical * Adder)),
-															   (DirHorizontal = 1; DirHorizontal = -1),
-															   (DirVertical = 1; DirVertical = -1),
-															   turno(E),
-															   retract(posicao_atual(bispo1, E, Xini, Yini)),
-															   assert(posicao_atual(bispo1, E, Xini + (DirHrizontal * Adder), Yini + (DirVertical * Adder)).
-
-mover(bispo, Xini, Yini, DirHorizontal, DirVertical, Adder) :- posicao_atual(bispo2, E, Xini, Yini),
-															   posicao_dentro_tabuleiro(Xini + (DirHorizontal * Adder), Yini + (DirVertical * Adder)),
-															   (DirHorizontal = 1; DirHorizontal = -1),
-															   (DirVertical = 1; DirVertical = -1),
-															   turno(E),
-															   retract(posicao_atual(bispo2, E, Xini, Yini)),
-															   assert(posicao_atual(bispo2, E, Xini + (DirHorizontal * Adder), Yini + (DirVertical * Adder)).
-															   
-% Rainha
-mover(rainha, Xini, Yini, DirHorizontal, DirVertical, Adder) :- (DirHorizontal > 1; DirHorizontal < -1),
-																(DirVertical > 1; DirVertical < -1),
-																write("Ambos a direção horizontal e vertical precisam de ter um valor de 1 ou -1."), !.
-																
-mover(rainha, Xini, Yini, DirHorizontal, DirVertical, Adder) :- Adder = 0,
-																write("O fator de multiplicação tem de ser diferente de zero."), !.
-
-mover(rainha, Xini, Yini, DirHorizontal, DirVertical, Adder) :- posicao_atual(rainha, E, Xini, Yini),
-																posicao_dentro_tabuleiro(Xini + (DirHorizontal * Adder), Yini + (DirVertical * Adder)),
-																turno(E),
-																(DirHorizontal <= 1; DirHorizontal >= -1),
-																(DirVertical <= 1; DirVertical >= -1),
-																retract(posicao_atual(rainha, E, Xini, Yini)),
-																assert(posicao_atual(rainha, E, Xini + (DirHorizontal * Adder), Yini + (DirVertical * Adder))).
-
-% Rei
-mover(rainha, Xini, Yini, DirHorizontal, DirVertical) :- (DirHorizontal > 1; DirHorizontal < -1),
-														 (DirVertical > 1; DirVertical < -1),
-														  write("Ambos a direção horizontal e vertical precisam de ter um valor de 1 ou -1."), !.
-
-mover(rainha, Xini, Yini, DirHorizontal, DirVertical) :- posicao_atual(rei, E, Xini, Yini),
-														 posicao_dentro_tabuleiro(Xini + DirHorizontal, Yini + DirVertical),
-														 turno(E),
-														 (DirHorizontal <= 1; DirHorizontal >= -1),
-														 (DirVertical <= 1; DirVertical >= -1),
-														 retract(posicao_atual(rei, E, Xini, Yini)),
-														 assert(posicao_atual(rei, E, Xini + DirHorizontal, Yini + DirVertical)).
-														 
-% Cavalo
-mover(cavalo, Xini, Yini, HorizontalMult, VerticalMult) :- posicao_atual(cavalo1, E, Xini, Yini),
-														   posicao_dentro_tabuleiro(Xini + DirHorizontal, Yini + DirVertical),
-														   turno(E),
-														   (abs(HorizontalMult) =:= 2, abs(VerticalMult).
 														   
+% Ciclo de jogo
+ciclo_de_jogo(Tabuleiro) :- modo_de_jogo_atual(humano_vs_humano), !,
+							retract(tabuleiro(_)), assert(tabuleiro(Tabuleiro)).
+							
 % Rotina de cálculo de ataque
 executar_ataques :- tabuleiro(T), verificar_ataques_linha(T, 1).
 verificar_ataques_linha([], _) :- writef("Verificacao do tabuleiro concluida.\n"), !.
@@ -148,21 +86,87 @@ verificar_ataques_linha([H|T], Y) :- verificar_ataques_coluna(H, 1, Y), Y1 is Y 
 verificar_ataques_coluna([], _, _) :- writef("Verificacao de linha concluida.\n"), !.
 verificar_ataques_coluna([H|T], X, Y) :- ataque(H, X, Y), X1 is X + 1, verificar_ataques_coluna(T, X1, Y).
 
-verificar_peca_ataca(PAtacante, PDefensora) :- PAtacante \= 0, PDefensora \= 0, (PAtacante > 5, PDefensora < 5; PAtacante < 5, PDefensora > 5).
+verificar_peca_ataca(PAtacante, PDefensora) :- PDefensora \= 0, !, (PAtacante > 5, PDefensora < 5, retract(pontos(pretas, P)), P1 is P + 1, assert(pontos(pretas, P1)); PAtacante < 5, PDefensora > 5, retract(pontos(brancas, P)), P1 is P + 1, assert(pontos(brancas, P1))).
 
 % Regras de ataque
-% Rei
-ataque(1, X, Y) :- tabuleiro(T), nth1(Y - 1, T, LinhaAnterior), nth1(Y, T, LinhaAtual), nth1(Y + 1, T, LinhaSeguinte),
 
-% Verificação da posicao dentro do tabuleiro
-posicao_dentro_tabuleiro(X, Y) :- X > 0, Y > 0, X <= 8, Y <= 8.
+% Verificação de casa vazia
+ataque(0, _, _) :- !.
+
+% Rei
+ataque(1, X, Y, T) :- atk_all_directions(1, X, Y, 1, T).
+ataque(6, X, Y, T) :- atk_all_directions(6, X, Y, 1, T).
+
+% Rainha
+ataque(2, X, Y, T) :- atk_all_directions(2, X, Y, 7, T).
+ataque(7, X, Y, T) :- atk_all_directions(7, X, Y, 7, T).
+
+% Utilidade para obter todas as posições a atacar num padrão equivalente à rainha (mesmo as fora do tabuleiro), no formato [Y, X], num raio equivalente a Adder
+% Representação das peças num raio de 1 (equivalente ao rei):
+%	1	2	3
+%	4	R	5
+%	6	7	8
+atk_all_directions(_, _, _, 0, _) :- writef("Finished atacking all directions."), !.
+atk_all_directions(P, X, Y, Adder, T) :- PrevCol is X - Adder, NextCol is X + Adder, PrevLine is Y - Adder, NextLine is Y + Adder,
+										 atk_list_positions(P, [[PrevLine, PrevCol], [PrevLine, X], [PrevLine, NextCol], [Y, PrevCol], [Y, NextCol], [NextLine, PrevCol], [NextLine, X], [NextLine, NextCol]], T),
+										 Adder1 is Adder - 1,
+										 atk_all_directions(P, X, Y, Adder1, Max, T).
+
+% Cavalo
+ataque(3, X, Y, T) :- atk_horse_positions(3, X, Y, T).
+ataque(8, X, Y, T) :- atk_horse_positions(8, X, Y, T).
+
+atk_horse_positions(_, _, _, 0, _) :- writef("Finished atacking all directions."), !.
+atk_horse_positions(P, X, Y, T) :- PrevLine1 is Y - 1, NextLine1 is Y + 1, PrevLine2 is Y - 2, NextLine2 is Y + 2, PrevCol1 is X - 1, NextCol1 is X + 1, PrevCol2 is X - 2, NextCol1 is X + 2, 
+								   atk_list_positions(P, [[PrevLine2, PrevCol1], [PrevLine2, NextCol1], [NextLine2, PrevCol1], [NextLine2, NextCol1], [PrevLine1, PrevCol2], [PrevLine1, NextCol2], [NextLine1, PrevCol2], [NextLine1, NextCol2]], T).
+
+% Torre
+ataque(4, X, Y, T) :- atk_cross_positions(4, X, Y, 7, T).
+ataque(9, X, Y, T) :- atk_cross_positions(9, X, Y, 7, T).
+
+% Utilidade para obter todas as posições a atacar num padrão equivalente à torre (mesmo as fora do tabuleiro), no formato [Y, X], num raio equivalente a Adder
+% Representação das peças num raio de 1 (equivalente à torre):
+%	-	1	-
+%	2	T	3
+%	-	4	-
+atk_cross_positions(_, _, _, 0, _) :- writef("Finished atacking all cross directions."), !.
+atk_cross_positions(P, X, Y, Adder, T) :- PrevCol is X - Adder, NextCol is X + Adder, PrevLine is Y - Adder, NextLine is Y + Adder,
+										  atk_list_positions(P, [[PrevLine, X], [NextLine, X], [Y, PrevCol], [Y, NextCol]], T),
+										  Adder1 is Adder - 1,
+										  atk_cross_positions(P, X, Y, Adder1, T).
+										  
+% Bispo
+ataque(5, X, Y, T) :- atk_cross_bishop_positions(5, X, Y, 7, T).
+ataque(10, X, Y, T) :- atk_cross_bishop_positions(10, X, Y, 7, T).
+
+% Utilidade para obter todas as posições a atacar num padrão equivalente ao bispo (mesmo as fora do tabuleiro), no formato [Y, X], num raio equivalente a Adder
+% Representação das peças num raio de 1 (equivalente ao bispo):
+%	1	-	2
+%	-	B	-
+%	3	-	4
+atk_cross_bishop_positions(_, _, _, 0, _) :- writef("Finished atacking all cross directions."), !.
+atk_cross_bishop_positions(P, X, Y, Adder, T) :- PrevCol is X - Adder, NextCol is X + Adder, PrevLine is Y - Adder, NextLine is Y + Adder,
+										  atk_list_positions(P, [[PrevLine, PrevCol], [PrevLine, NextCol], [NextLine, PrevCol], [NextLine, NextCol]], T),
+										  Adder1 is Adder - 1,
+										  atk_cross_positions(P, X, Y, Adder1, T).
+
+% Ataca uma lista de posições no formato [Y, X].
+atk_list_positions(_, [], _) :- !.
+atk_list_positions(P, [Pos|Positions], T) :- atk_piece_at_pos(P, Pos, T), atk_list_positions(P, Positions, T).
+
+% Dada uma lista [Y, X], obtem a linha Y do tabuleiro e ataca uma pos X dessa linha.
+atk_at_position(_, [Y|_], _) :- Y <= 0, Y >= 9, writef("Y inválido.\n"), !.
+atk_at_position(P, [Y|X], T) :- Y > 0, Y < 9, nth1(Y, T, Line), atk_at_line_pos(P, X, Line).
+
+% Dada uma linha do tabuleiro, e uma pos X, verifica o ataque entre a peça P e a peça defensora PD.
+atk_at_line_pos(_, X, _) :- X <= 0, X >= 9, writef("X inválido."), !.
+atk_at_line_pos(P, X, Line) :- X > 0, X < 9, nth1(X, Line, PD), verificar_peca_ataca(P, PD).
 
 % Verificação da cor da casa
 cor_da_casa(X, Y, branca) :- Y mod 2 =:= 1, (X - 1) mod 2 =:= 0, !.
 cor_da_casa(X, Y, preta) :- \+ cor_da_casa(X, Y, branca).
 
 % Code utilities
-
 % Substitui um elemento numa matriz dadas as suas coordenadas X, Y: replace/5
 replace( [L|Ls] , 1 , Y , Z , [R|Ls] ) :- % once we find the desired row,
   replace_column(L,Y,Z,R), !.			  % - we replace specified column, and we're done.
@@ -178,7 +182,7 @@ replace_column( [C|Cs] , Y , Z , [C|Rs] ) :- % otherwise,
   replace_column( Cs , Y1 , Z , Rs ).		 % - and recurse down.
   
 % Substitui um elemento no tabuleiro dadas as coordenadas X, Y: replaceOnChessboard/3
-replaceOnChessboard(P, X, Y) :- tabuleiro(T), replace(T, X, Y, P, T2), retract(tabuleiro(_)), assert(tabuleiro(T2)).
+replaceOnChessboard(P, X, Y) :- tabuleiro(T), replace(T, X, Y, P, T2), ciclo_de_jogo(T2).
 
 % Escreve o tabuleiro no ecrã: writeChessboard/0
 writeChessboard :- writef(" _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n"),
