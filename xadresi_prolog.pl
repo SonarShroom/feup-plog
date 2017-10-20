@@ -36,13 +36,13 @@ modo_de_jogo_atual(humano_vs_humano).
 mudar_modo_de_jogo(humano_vs_humano) :- retract(modo_de_jogo_atual(_)), assert(modo_de_jogo_atual(humano_vs_humano)), !.
 mudar_modo_de_jogo(humano_vs_computador) :- retract(modo_de_jogo_atual(_)), assert(modo_de_jogo_atual(humano_vs_computador)), !.
 mudar_modo_de_jogo(computador_vs_computador) :- retract(modo_de_jogo_atual(_)), assert(modo_de_jogo_atual(computador_vs_computador)), !.
-mudar_modo_de_jogo(X) :- writef("Este modo de jogo não existe/não é suportado: \nOs seguintes modos de jogo estão implementados: \n\n humano_vs_humano \n\n humano_vs_computador \n\n computador_vs_computador").
+mudar_modo_de_jogo(_) :- writef("Este modo de jogo não existe/não é suportado: \nOs seguintes modos de jogo estão implementados: \n\n humano_vs_humano \n\n humano_vs_computador \n\n computador_vs_computador").
 
 
 % Tabuleiro (inicialmente encontra-se vazio)
 :- dynamic tabuleiro/1.
-tabuleiro([[0, 0, 0, 0, 0, 0, 0, 0],
-		   [0, 0, 0, 0, 0, 0, 0, 0],
+tabuleiro([[1, 2, 0, 0, 0, 0, 0, 9],
+		   [8, 0, 0, 0, 0, 0, 0, 0],
 		   [0, 0, 0, 0, 0, 0, 0, 0],
 		   [0, 0, 0, 0, 0, 0, 0, 0],
 		   [0, 0, 0, 0, 0, 0, 0, 0],
@@ -80,18 +80,21 @@ ciclo_de_jogo(Tabuleiro) :- modo_de_jogo_atual(humano_vs_humano), !,
 							retract(tabuleiro(_)), assert(tabuleiro(Tabuleiro)).
 							
 % Rotina de cálculo de ataque
-executar_ataques :- tabuleiro(T), verificar_ataques_linha(T, 1).
-verificar_ataques_linha([], _) :- writef("Verificacao do tabuleiro concluida.\n"), !.
-verificar_ataques_linha([H|T], Y) :- verificar_ataques_coluna(H, 1, Y), Y1 is Y + 1, verificar_ataques_linha(T, Y1).
-verificar_ataques_coluna([], _, _) :- writef("Verificacao de linha concluida.\n"), !.
-verificar_ataques_coluna([H|T], X, Y) :- ataque(H, X, Y), X1 is X + 1, verificar_ataques_coluna(T, X1, Y).
+executar_ataques :- tabuleiro(T), verificar_ataques_linha(T, 1, T).
+verificar_ataques_linha([], _, _) :- writef("Verificacao do tabuleiro concluida.\n"), !.
+verificar_ataques_linha([H|T], Y, Tabuleiro) :- verificar_ataques_coluna(H, 1, Y, Tabuleiro), Y1 is Y + 1, verificar_ataques_linha(T, Y1, Tabuleiro).
+verificar_ataques_coluna([], _, _, _) :- writef("Verificacao de linha concluida.\n"), !.
+verificar_ataques_coluna([H|T], X, Y, Tabuleiro) :- ataque(H, X, Y, Tabuleiro), X1 is X + 1, verificar_ataques_coluna(T, X1, Y, Tabuleiro).
 
-verificar_peca_ataca(PAtacante, PDefensora) :- PDefensora \= 0, !, (PAtacante > 5, PDefensora < 5, retract(pontos(pretas, P)), P1 is P + 1, assert(pontos(pretas, P1)); PAtacante < 5, PDefensora > 5, retract(pontos(brancas, P)), P1 is P + 1, assert(pontos(brancas, P1))).
+verificar_peca_ataca(_, 0) :- !.
+verificar_peca_ataca(PAtacante, PDefensora) :- ((PAtacante > 5, PDefensora > 5); (PAtacante < 6, PDefensora < 6)), !.
+verificar_peca_ataca(PAtacante, PDefensora) :- PAtacante > 5, PDefensora < 6, retract(pontos(pretas, P)), P1 is P + 1, assert(pontos(pretas, P1)).
+verificar_peca_ataca(PAtacante, PDefensora) :- PAtacante < 6, PDefensora > 5, retract(pontos(brancas, P)), P1 is P + 1, assert(pontos(brancas, P1)).
 
 % Regras de ataque
 
 % Verificação de casa vazia
-ataque(0, _, _) :- !.
+ataque(0, _, _, _) :- !.
 
 % Rei
 ataque(1, X, Y, T) :- atk_all_directions(1, X, Y, 1, T).
@@ -100,6 +103,20 @@ ataque(6, X, Y, T) :- atk_all_directions(6, X, Y, 1, T).
 % Rainha
 ataque(2, X, Y, T) :- atk_all_directions(2, X, Y, 7, T).
 ataque(7, X, Y, T) :- atk_all_directions(7, X, Y, 7, T).
+
+% Cavalo
+ataque(3, X, Y, T) :- atk_horse_positions(3, X, Y, T).
+ataque(8, X, Y, T) :- atk_horse_positions(8, X, Y, T).
+
+% Torre
+ataque(4, X, Y, T) :- atk_cross_positions(4, X, Y, 7, T).
+ataque(9, X, Y, T) :- atk_cross_positions(9, X, Y, 7, T).
+
+
+										  
+% Bispo
+ataque(5, X, Y, T) :- atk_cross_bishop_positions(5, X, Y, 7, T).
+ataque(10, X, Y, T) :- atk_cross_bishop_positions(10, X, Y, 7, T).
 
 % Utilidade para obter todas as posições a atacar num padrão equivalente à rainha (mesmo as fora do tabuleiro), no formato [Y, X], num raio equivalente a Adder
 % Representação das peças num raio de 1 (equivalente ao rei):
@@ -110,19 +127,10 @@ atk_all_directions(_, _, _, 0, _) :- writef("Finished atacking all directions.")
 atk_all_directions(P, X, Y, Adder, T) :- PrevCol is X - Adder, NextCol is X + Adder, PrevLine is Y - Adder, NextLine is Y + Adder,
 										 atk_list_positions(P, [[PrevLine, PrevCol], [PrevLine, X], [PrevLine, NextCol], [Y, PrevCol], [Y, NextCol], [NextLine, PrevCol], [NextLine, X], [NextLine, NextCol]], T),
 										 Adder1 is Adder - 1,
-										 atk_all_directions(P, X, Y, Adder1, Max, T).
-
-% Cavalo
-ataque(3, X, Y, T) :- atk_horse_positions(3, X, Y, T).
-ataque(8, X, Y, T) :- atk_horse_positions(8, X, Y, T).
-
-atk_horse_positions(_, _, _, 0, _) :- writef("Finished atacking all directions."), !.
+										 atk_all_directions(P, X, Y, Adder1, T).
+										 
 atk_horse_positions(P, X, Y, T) :- PrevLine1 is Y - 1, NextLine1 is Y + 1, PrevLine2 is Y - 2, NextLine2 is Y + 2, PrevCol1 is X - 1, NextCol1 is X + 1, PrevCol2 is X - 2, NextCol1 is X + 2, 
 								   atk_list_positions(P, [[PrevLine2, PrevCol1], [PrevLine2, NextCol1], [NextLine2, PrevCol1], [NextLine2, NextCol1], [PrevLine1, PrevCol2], [PrevLine1, NextCol2], [NextLine1, PrevCol2], [NextLine1, NextCol2]], T).
-
-% Torre
-ataque(4, X, Y, T) :- atk_cross_positions(4, X, Y, 7, T).
-ataque(9, X, Y, T) :- atk_cross_positions(9, X, Y, 7, T).
 
 % Utilidade para obter todas as posições a atacar num padrão equivalente à torre (mesmo as fora do tabuleiro), no formato [Y, X], num raio equivalente a Adder
 % Representação das peças num raio de 1 (equivalente à torre):
@@ -135,10 +143,6 @@ atk_cross_positions(P, X, Y, Adder, T) :- PrevCol is X - Adder, NextCol is X + A
 										  Adder1 is Adder - 1,
 										  atk_cross_positions(P, X, Y, Adder1, T).
 										  
-% Bispo
-ataque(5, X, Y, T) :- atk_cross_bishop_positions(5, X, Y, 7, T).
-ataque(10, X, Y, T) :- atk_cross_bishop_positions(10, X, Y, 7, T).
-
 % Utilidade para obter todas as posições a atacar num padrão equivalente ao bispo (mesmo as fora do tabuleiro), no formato [Y, X], num raio equivalente a Adder
 % Representação das peças num raio de 1 (equivalente ao bispo):
 %	1	-	2
@@ -152,15 +156,16 @@ atk_cross_bishop_positions(P, X, Y, Adder, T) :- PrevCol is X - Adder, NextCol i
 
 % Ataca uma lista de posições no formato [Y, X].
 atk_list_positions(_, [], _) :- !.
-atk_list_positions(P, [Pos|Positions], T) :- atk_piece_at_pos(P, Pos, T), atk_list_positions(P, Positions, T).
+atk_list_positions(P, [Pos|Positions], T) :- atk_at_position(P, Pos, T), atk_list_positions(P, Positions, T).
 
 % Dada uma lista [Y, X], obtem a linha Y do tabuleiro e ataca uma pos X dessa linha.
-atk_at_position(_, [Y|_], _) :- Y <= 0, Y >= 9, writef("Y inválido.\n"), !.
-atk_at_position(P, [Y|X], T) :- Y > 0, Y < 9, nth1(Y, T, Line), atk_at_line_pos(P, X, Line).
+atk_at_position(_, [Y|_], _) :- (Y < 1; Y > 8), writef("Y invalido.\n"), !.
+atk_at_position(P, [Y|X], T) :- Y > 0, Y < 9, !, nth1(Y, T, Line), atk_at_line_pos(P, X, Line).
 
 % Dada uma linha do tabuleiro, e uma pos X, verifica o ataque entre a peça P e a peça defensora PD.
-atk_at_line_pos(_, X, _) :- X <= 0, X >= 9, writef("X inválido."), !.
-atk_at_line_pos(P, X, Line) :- X > 0, X < 9, nth1(X, Line, PD), verificar_peca_ataca(P, PD).
+atk_at_line_pos(_, [X|_], _) :- (X < 1; X > 8), writef("X invalido."), !.
+atk_at_line_pos(P, [X|_], Line) :- X > 0, X < 9, !, nth1(X, Line, PD), verificar_peca_ataca(P, PD).
+
 
 % Verificação da cor da casa
 cor_da_casa(X, Y, branca) :- Y mod 2 =:= 1, (X - 1) mod 2 =:= 0, !.
