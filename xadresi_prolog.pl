@@ -129,7 +129,7 @@ atk_all_directions(P, X, Y, Adder, T) :- PrevCol is X - Adder, NextCol is X + Ad
 										 Adder1 is Adder - 1,
 										 atk_all_directions(P, X, Y, Adder1, T).
 										 
-atk_horse_positions(P, X, Y, T) :- PrevLine1 is Y - 1, NextLine1 is Y + 1, PrevLine2 is Y - 2, NextLine2 is Y + 2, PrevCol1 is X - 1, NextCol1 is X + 1, PrevCol2 is X - 2, NextCol1 is X + 2, 
+atk_horse_positions(P, X, Y, T) :- PrevLine1 is Y - 1, NextLine1 is Y + 1, PrevLine2 is Y - 2, NextLine2 is Y + 2, PrevCol1 is X - 1, NextCol1 is X + 1, PrevCol2 is X - 2, NextCol2 is X + 2, 
 								   atk_list_positions(P, [[PrevLine2, PrevCol1], [PrevLine2, NextCol1], [NextLine2, PrevCol1], [NextLine2, NextCol1], [PrevLine1, PrevCol2], [PrevLine1, NextCol2], [NextLine1, PrevCol2], [NextLine1, NextCol2]], T).
 
 % Utilidade para obter todas as posições a atacar num padrão equivalente à torre (mesmo as fora do tabuleiro), no formato [Y, X], num raio equivalente a Adder
