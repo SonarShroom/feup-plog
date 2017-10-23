@@ -26,6 +26,12 @@ turno(brancas).
 pontos(brancas, 0).
 pontos(pretas, 0).
 
+% Jogadas possíveis
+% Quando jogadas_possiveis(todas) isto significa todas exceto o rei, visto que os reis têm de ser ambos a primeira e a ultima peça a ser posicionados.
+% Estados possíveis: rei, todas, rainha
+:- dynamic jogadas_possiveis/1.
+jogadas_possiveis(rei).
+
 % Modos de jogo
 % Modo de jogo atual
 :- dynamic modo_de_jogo_atual/1.
@@ -51,8 +57,8 @@ tabuleiro([[0, 0, 0, 0, 0, 0, 0, 0],
 		   [0, 0, 0, 0, 0, 0, 0, 0]]).
 		   
 % Passagem de turno
-passar_turno :- turno(brancas), retract(turno(brancas)), assert(turno(pretas)).
-passar_turno :- turno(pretas), retract(turno(pretas)), assert(turno(brancas)).
+passar_turno :- turno(brancas), retract(turno(_)), assert(turno(pretas)).
+passar_turno :- turno(pretas), retract(turno(_)), assert(turno(brancas)).
 
 % Quantidade de peças de cada equipa
 :- dynamic quantidade_de_pecas/3.
@@ -67,15 +73,46 @@ quantidade_de_pecas(cavalo, pretas, 2).
 quantidade_de_pecas(torre, pretas, 2).
 quantidade_de_pecas(bispo, pretas, 2).
 
+% Casa do primeiro bispo
+:- dynamic casa_primeiro_bispo/2.
+casa_primeiro_bispo(brancas, nao_existe).
+casa_primeiro_bispo(pretas, nao_existe).
+
 % Posicionamento das peças
-posicionar_peca(P, _, _) :- turno(E), quantidade_de_pecas(P, E, X), X =:= 0, write("Não existem mais peças deste tipo."), !.
-posicionar_peca(rei, X, Y) :- turno(E), replaceOnChessboard(1, X, Y), retract(quantidade_de_pecas(rei, E, 1)), assert(quantidade_de_pecas(rei, E, 0)).
-posicionar_peca(rainha, X, Y) :- turno(E), replaceOnChessboard(2, X, Y), retract(quantidade_de_pecas(rainha, E, 1)), assert(quantidade_de_pecas(rainha, E, 0)).
-posicionar_peca(cavalo, X, Y) :- turno(E), replaceOnChessboard(3, X, Y), retract(quantidade_de_pecas(cavalo, E, Q)), assert(quantidade_de_pecas(rainha, E, Q - 1)).
-posicionar_peca(torre, X, Y) :- turno(E), replaceOnChessboard(4, X, Y), retract(quantidade_de_pecas(torre, E, Q)), assert(quantidade_de_pecas(rainha, E, Q - 1)).
-posicionar_peca(bispo, X, Y) :- turno(E), replaceOnChessboard(5, X, Y), retract(quantidade_de_pecas(bispo, E, Q)), assert(quantidade_de_pecas(rainha, E, Q - 1)).
+% Movimentos não permitidos
+posicionar_peca(P, _, _) :- turno(E), quantidade_de_pecas(P, E, X), X = 0, write("Não existem mais peças deste tipo."), !.
+posicionar_peca(bispo, X, Y) :- turno(E), casa_primeiro_bispo(E, Cor), cor_da_casa(X, Y, Cor), writef("Não se pode colocar bispos em casas da mesma cor.\n"), !.
+
+% Brancas
+posicionar_peca(rei, X, Y) :- jogadas_possiveis(rei), retract(jogadas_possiveis(_)), assert(jogadas_possiveis(todas)), turno(brancas), retract(quantidade_de_pecas(rei, brancas, 1)), assert(quantidade_de_pecas(rei, brancas, 0)), replaceOnChessboard(1, X, Y), !.
+posicionar_peca(rainha, X, Y) :- (jogadas_possiveis(rainha), retract(jogadas_possiveis(_)), assert(jogadas_possiveis(todas)); jogadas_possiveis(todas), retract(jogadas_possiveis(_)), assert(jogadas_possiveis(rainha))), turno(brancas), retract(quantidade_de_pecas(rainha, brancas, 1)), assert(quantidade_de_pecas(rainha, brancas, 0)), replaceOnChessboard(2, X, Y), !.
+posicionar_peca(cavalo, X, Y) :- jogadas_possiveis(todas), turno(brancas), retract(quantidade_de_pecas(cavalo, brancas, Q)), assert(quantidade_de_pecas(cavalo, brancas, Q - 1)), replaceOnChessboard(3, X, Y), !.
+posicionar_peca(torre, X, Y) :- jogadas_possiveis(todas), turno(brancas), retract(quantidade_de_pecas(torre, brancas, Q)), assert(quantidade_de_pecas(torre, brancas, Q - 1)), replaceOnChessboard(4, X, Y), !.
+posicionar_peca(bispo, X, Y) :- jogadas_possiveis(todas), turno(brancas), casa_primeiro_bispo(brancas, nao_existe), cor_da_casa(X, Y, Cor), retract(casa_primeiro_bispo(brancas, _)), assert(casa_primeiro_bispo(brancas, Cor)), retract(quantidade_de_pecas(bispo, brancas, Q)), assert(quantidade_de_pecas(bispo, brancas, Q - 1)), replaceOnChessboard(5, X, Y), !.
+posicionar_peca(bispo, X, Y) :- jogadas_possiveis(todas), turno(brancas), casa_primeiro_bispo(brancas, _), cor_da_casa(X, Y, _), retract(quantidade_de_pecas(bispo, brancas, Q)), assert(quantidade_de_pecas(bispo, brancas, Q - 1)), replaceOnChessboard(5, X, Y), !.
+
+% Pretas
+posicionar_peca(rei, X, Y) :- jogadas_possiveis(rei), retract(jogadas_possiveis(_)), assert(jogadas_possiveis(todas)), turno(pretas), retract(quantidade_de_pecas(rei, pretas, 1)), assert(quantidade_de_pecas(rei, pretas, 0)), replaceOnChessboard(6, X, Y), !.
+posicionar_peca(rainha, X, Y) :- (jogadas_possiveis(rainha), retract(jogadas_possiveis(_)), assert(jogadas_possiveis(todas)); jogadas_possiveis(todas), retract(jogadas_possiveis(_)), assert(jogadas_possiveis(rainha))), turno(pretas), retract(quantidade_de_pecas(rainha, pretas, 1)), assert(quantidade_de_pecas(rainha, pretas, 0)), replaceOnChessboard(7, X, Y), !.
+posicionar_peca(cavalo, X, Y) :- jogadas_possiveis(todas), turno(pretas), retract(quantidade_de_pecas(cavalo, pretas, Q)), assert(quantidade_de_pecas(cavalo, pretas, Q - 1)), replaceOnChessboard(8, X, Y), !.
+posicionar_peca(torre, X, Y) :- jogadas_possiveis(todas), turno(pretas), retract(quantidade_de_pecas(torre, pretas, Q)), assert(quantidade_de_pecas(torre, pretas, Q - 1)), replaceOnChessboard(9, X, Y), !.
+posicionar_peca(bispo, X, Y) :- jogadas_possiveis(todas), turno(pretas), casa_primeiro_bispo(pretas, nao_existe), cor_da_casa(X, Y, Cor), retract(casa_primeiro_bispo(pretas, _)), assert(casa_primeiro_bispo(pretas, Cor)), retract(quantidade_de_pecas(bispo, pretas, Q)), assert(quantidade_de_pecas(bispo, pretas, Q - 1)), replaceOnChessboard(10, X, Y), !.
+posicionar_peca(bispo, X, Y) :- jogadas_possiveis(todas), turno(pretas), casa_primeiro_bispo(pretas, _), cor_da_casa(X, Y, _), retract(quantidade_de_pecas(bispo, pretas, Q)), assert(quantidade_de_pecas(bispo, pretas, Q - 1)), replaceOnChessboard(10, X, Y), !.
 														   
 % Ciclo de jogo
+ciclo_de_jogo(_) :- quantidade_de_pecas(rei, brancas, 0),
+					quantidade_de_pecas(rainha, brancas, 0),
+					quantidade_de_pecas(cavalo, brancas, 0),
+					quantidade_de_pecas(torre, brancas, 0),
+					quantidade_de_pecas(bispo, brancas, 0),
+					quantidade_de_pecas(rei, pretas, 0),
+					quantidade_de_pecas(rainha, pretas, 0),
+					quantidade_de_pecas(cavalo, pretas, 0),
+					quantidade_de_pecas(torre, pretas, 0),
+					quantidade_de_pecas(bispo, pretas, 0),
+					pontos(pretas, PP), pontos(brancas, PB),
+					(PP > PB, writef("As pretas venceram o jogo!"); PB > PP, writef("As brancas venceram o jogo!"); PP = PB, writef("O jogo terminou num empate!")).
+
 ciclo_de_jogo(Tabuleiro) :- modo_de_jogo_atual(humano_vs_humano), !,
 							retract(tabuleiro(_)), assert(tabuleiro(Tabuleiro)),
 							passar_turno.
