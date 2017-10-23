@@ -26,9 +26,9 @@ pontos(pretas, 0).
 % Estados possíveis: rei, todas, rainha
 :- dynamic jogadas_possiveis/1.
 jogadas_possiveis(rei).
-% Lista de posições de jogadas possíveis
+% Lista de posições de jogadas possíveis (quando vazia, é porque estamos no 1º turno logo todas são possíveis.)
 :- dynamic pos_jogadas_possiveis/1.
-pos_jogadas_possiveis(todas).
+pos_jogadas_possiveis([]).
 
 % Construção de lista das posições das jogadas possíveis:
 build_list_possible_plays(T, E) :- retract(pos_jogadas_possiveis(_)), assert(pos_jogadas_possiveis([])), build_list_possible_plays_line(T, 1, E).
@@ -38,8 +38,8 @@ build_list_possible_plays_line([THead|TTail], Y, E) :- build_list_possible_plays
 
 build_list_possible_plays_col([], _, _, _) :- !.
 %TODO: construir lista das casas vizinhas (ou refazer predicados de ataque para retornar lista de casas vizinhas), e inserir casos em que exista casa que nao satisfaça condição.
-build_list_possible_plays_col([H|T], X, Y, E) :- E = brancas, !, H > 5, retract(pos_jogadas_possiveis(L)), append(L, [[Y - 1, X - 1], [Y - 1, X], [Y - 1, X + 1], [Y, X - 1], [Y, X + 1], [Y + 1, X - 1], [Y + 1, X], [Y + 1, X + 1]], L2), assert(pos_jogadas_possiveis(L2)), X1 is X + 1, build_list_possible_plays_col(T, X1, Y, E).
-build_list_possible_plays_col([H|T], X, Y, E) :- E = pretas, !, H < 6, retract(pos_jogadas_possiveis(L)), append(L, L2), assert(pos_jogadas_possiveis(L2)), X1 is X + 1, build_list_possible_plays_col(T, X1, Y, E).
+build_list_possible_plays_col([H|T], X, Y, E) :- E = brancas, H > 5, retract(pos_jogadas_possiveis(L)), append(L, [[Y - 1, X - 1], [Y - 1, X], [Y - 1, X + 1], [Y, X - 1], [Y, X + 1], [Y + 1, X - 1], [Y + 1, X], [Y + 1, X + 1]], L2), assert(pos_jogadas_possiveis(L2)), X1 is X + 1, build_list_possible_plays_col(T, X1, Y, E).
+build_list_possible_plays_col([H|T], X, Y, E) :- E = pretas, H < 6, retract(pos_jogadas_possiveis(L)), append(L, [[Y - 1, X - 1], [Y - 1, X], [Y - 1, X + 1], [Y, X - 1], [Y, X + 1], [Y + 1, X - 1], [Y + 1, X], [Y + 1, X + 1]], L2), assert(pos_jogadas_possiveis(L2)), X1 is X + 1, build_list_possible_plays_col(T, X1, Y, E).
 
 % Modos de jogo
 % Modo de jogo atual
@@ -85,8 +85,9 @@ casa_primeiro_bispo(pretas, nao_existe).
 
 % Posicionamento das peças
 % Movimentos não permitidos
-posicionar_peca(_, X, Y, T, T, _) :- ((X < 1; X > 8; Y < 1; Y > 8), !, write("Posicao fora do tabuleiro. Refaca a jogada."), nl; nth1(Y, T, Line), nth1(X, Line, P), P \= 0, write("Casa nao esta vazia. Refaca a jogada."), nl), !.
-posicionar_peca(P, _, _, T, T, E) :- jogadas_possiveis(P2), (quantidade_de_pecas(P, E, X), X = 0, write("Nao existem mais pecas deste tipo. Refaca a jogada."), nl; P \= P2, P2 = rei, write("So pode posicionar o rei nesta jogada. Refaca a jogada."), nl; P \= P2, P2 = rainha, write("So pode posicionar a rainha nesta jogada. Refaca a jogada."), nl; P = rei, P2 = todos, write("Os reis só podem ser posicionados na primeira e ultima jogadas."), nl), !.
+posicionar_peca(_, X, Y, T, T, _) :- ((X < 1; X > 8; Y < 1; Y > 8), !, write("Posicao fora do tabuleiro. Refaca a jogada."), nl; nth1(Y, T, Line), nth1(X, Line, P), P \= 0, write("Casa nao esta vazia. Refaca a jogada."), nl; \+ pos_jogadas_possiveis(todas), pos_jogadas_possiveis(L), \+ member([X, Y], L), write("Essa jogada nao e possivel. Refaca a jogada."), nl), !.
+posicionar_peca(P, _, _, T, T, E) :- jogadas_possiveis(P2), (quantidade_de_pecas(P, E, X), X = 0, write("Nao existem mais pecas deste tipo. Refaca a jogada."), nl; P \= P2, P2 = rei, write("So pode posicionar o rei nesta jogada. Refaca a jogada."), nl; P \= P2, P2 = rainha, write("So pode posicionar a rainha nesta jogada. Refaca a jogada."), nl), !.
+posicionar_peca(rei, _, _, T, T, E) :- jogadas_possiveis(todas), write("Os reis so podem ser posicionados na primeira e ultima jogadas. Refaca a jogada."), nl, !.
 posicionar_peca(bispo, X, Y, T, T, E) :- casa_primeiro_bispo(E, Cor), cor_da_casa(X, Y, Cor), write("Não se pode colocar bispos em casas da mesma cor. Refaca a jogada.\n"), !.
 
 % Brancas
@@ -114,7 +115,7 @@ xadrersi(Tabuleiro, E) :- modo_de_jogo_atual(humano_vs_humano), !,
 						  write("Coordenadas: \nX: "), read(X), nl,
 						  write("Y: "), read(Y),
 						  posicionar_peca(P, X, Y, Tabuleiro, T2, E),
-						  (Tabuleiro \= T2, game_end(T2); Tabuleiro \= T2, E = brancas, xadrersi(T2, pretas); Tabuleiro \= T2, xadrersi(T2, brancas); xadrersi(Tabuleiro, E)).
+						  (Tabuleiro \= T2, game_end(T2); Tabuleiro \= T2, E = brancas, build_list_possible_plays(T2, pretas), xadrersi(T2, pretas); Tabuleiro \= T2, build_list_possible_plays(T2, brancas), xadrersi(T2, brancas); xadrersi(Tabuleiro, E)).
 							
 % Verficação de término de jogo
 game_end(Tabuleiro) :- quantidade_de_pecas(rei, brancas, 0),
