@@ -31,14 +31,15 @@ jogadas_possiveis(rei).
 pos_jogadas_possiveis(todas).
 
 % Construção de lista das posições das jogadas possíveis:
-build_list_possible_plays :- turno(brancas), !, tabuleiro(T), retract(pos_jogadas_possiveis(_)), assert(pos_jogadas_possiveis([])), build_list_possible_plays_line(T, 1).
+build_list_possible_plays(E) :- tabuleiro(T), retract(pos_jogadas_possiveis(_)), assert(pos_jogadas_possiveis([])), build_list_possible_plays_line(T, 1, E).
 
-build_list_possible_plays([], _) :- !.
-build_list_possible_plays_line([THead|TTail], Y) :- build_list_possible_plays_col(THead, 1, Y), Y1 is Y + 1, build_list_possible_plays_line(TTail, Y1).
+build_list_possible_plays([], _, _) :- !.
+build_list_possible_plays_line([THead|TTail], Y, E) :- build_list_possible_plays_col(THead, 1, Y, E), Y1 is Y + 1, build_list_possible_plays_line(TTail, Y1, E).
 
-build_list_possible_plays_col([], _, _) :- !.
-build_list_possible_plays_col([H|T], X, Y) :- turno(brancas), !, H > 5, retract(pos_jogadas_possiveis(L)), append(L, [X, Y], L2) assert(pos_jogadas_possiveis(L2)).
-build_list_possible_plays_col([H|T], X, Y) :- turno(pretas), !, H < 6, retract(pos_jogadas_possiveis(L)), append(L, [X, Y], L2) assert(pos_jogadas_possiveis(L2)).
+build_list_possible_plays_col([], _, _, _) :- !.
+%TODO: construir lista das casas vizinhas (ou refazer predicados de ataque para retornar lista de casas vizinhas), e inserir casos em que exista casa que nao satisfaça condição.
+build_list_possible_plays_col([H|T], X, Y, E) :- E = brancas, !, H > 5, retract(pos_jogadas_possiveis(L)), append(L, [X, Y], L2), assert(pos_jogadas_possiveis(L2)), X1 is X + 1, build_list_possible_plays_col(T, X1, Y, E).
+build_list_possible_plays_col([H|T], X, Y, E) :- E = pretas, !, H < 6, retract(pos_jogadas_possiveis(L)), append(L, [X, Y], L2), assert(pos_jogadas_possiveis(L2)), X1 is X + 1, build_list_possible_plays_col(T, X1, Y, E).
 
 % Modos de jogo
 % Modo de jogo atual
@@ -130,9 +131,11 @@ game_end(Tabuleiro) :- quantidade_de_pecas(rei, brancas, 0),
 					   quantidade_de_pecas(torre, pretas, 0),
 					   quantidade_de_pecas(bispo, pretas, 0),
 					   executar_ataques(Tabuleiro),
+					   writeChessboard(Tabuleiro),
 					   pontos(pretas, PP), pontos(brancas, PB),
-					   (PP > PB, writef("As pretas venceram o jogo!"), nl; PB > PP, writef("As brancas venceram o jogo!"), nl; PP = PB, writef("O jogo terminou num empate!"), nl).
-							
+					   (PP > PB, writef("As pretas venceram o jogo!"), nl; PB > PP, writef("As brancas venceram o jogo!"), nl; PP = PB, writef("O jogo terminou num empate!"), nl), 
+					   make.
+
 % Rotina de cálculo de ataque
 executar_ataques(T) :- verificar_ataques_linha(T, 1, T).
 verificar_ataques_linha([], _, _) :- writef("Verificacao do tabuleiro concluida.\n"), !.
@@ -202,9 +205,9 @@ atk_cross_positions(P, X, Y, Adder, T) :- PrevCol is X - Adder, NextCol is X + A
 %	3	-	4
 atk_cross_bishop_positions(_, _, _, 0, _) :- writef("Finished atacking all cross directions."), !.
 atk_cross_bishop_positions(P, X, Y, Adder, T) :- PrevCol is X - Adder, NextCol is X + Adder, PrevLine is Y - Adder, NextLine is Y + Adder,
-										  atk_list_positions(P, [[PrevLine, PrevCol], [PrevLine, NextCol], [NextLine, PrevCol], [NextLine, NextCol]], T),
-										  Adder1 is Adder - 1,
-										  atk_cross_positions(P, X, Y, Adder1, T).
+												 atk_list_positions(P, [[PrevLine, PrevCol], [PrevLine, NextCol], [NextLine, PrevCol], [NextLine, NextCol]], T),
+												 Adder1 is Adder - 1,
+												 atk_cross_positions(P, X, Y, Adder1, T).
 
 % Ataca uma lista de posições no formato [Y, X].
 atk_list_positions(_, [], _) :- !.
@@ -237,11 +240,8 @@ replace_column( [C|Cs] , Y , Z , [C|Rs] ) :- % otherwise,
   Y > 1,                                     % - assuming that the column offset is positive,
   Y1 is Y-1,                                 % - we decrement it
   replace_column( Cs , Y1 , Z , Rs ).		 % - and recurse down.
-  
-% Substitui um elemento no tabuleiro dadas as coordenadas X, Y: replaceOnChessboard/3
-replaceOnChessboard(P, X, Y, T, T2) :- replace(T, X, Y, P, T2).
 
-% Escreve o tabuleiro no ecrã: writeChessboard/0
+% Escreve o tabuleiro no ecrã: writeChessboard/1
 writeChessboard(Tabuleiro) :- writef(" _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ "), nl,
 							  writeChessboardLines(Tabuleiro).
 
