@@ -38,9 +38,12 @@ build_list_possible_plays_line([THead|TTail], Y, E) :- build_list_possible_plays
 
 build_list_possible_plays_col([], _, _, _) :- !.
 build_list_possible_plays_col([0|T], X, Y, E) :- X1 is X + 1, build_list_possible_plays_col(T, X1, Y, E), !.
-%TODO: construir lista das casas vizinhas (ou refazer predicados de ataque para retornar lista de casas vizinhas), e inserir casos em que exista casa que nao satisfaça condição.
-build_list_possible_plays_col([H|T], X, Y, brancas) :- H > 5, retract(pos_jogadas_possiveis(L)), append(L, [[Y - 1, X - 1], [Y - 1, X], [Y - 1, X + 1], [Y, X - 1], [Y, X + 1], [Y + 1, X - 1], [Y + 1, X], [Y + 1, X + 1]], L2), assert(pos_jogadas_possiveis(L2)), X1 is X + 1, build_list_possible_plays_col(T, X1, Y, brancas).
-build_list_possible_plays_col([H|T], X, Y, pretas) :- H < 6, retract(pos_jogadas_possiveis(L)), append(L, [[Y - 1, X - 1], [Y - 1, X], [Y - 1, X + 1], [Y, X - 1], [Y, X + 1], [Y + 1, X - 1], [Y + 1, X], [Y + 1, X + 1]], L2), assert(pos_jogadas_possiveis(L2)), X1 is X + 1, build_list_possible_plays_col(T, X1, Y, pretas).
+build_list_possible_plays_col([H|T], X, Y, brancas) :- H > 5, retract(pos_jogadas_possiveis(L)), PrevCol is X - 1, NextCol is X + 1, PrevLine is Y - 1, NextLine is Y + 1, 
+													   append(L, [[PrevLine, PrevCol], [PrevLine, X], [PrevLine, NextCol], [Y, PrevCol], [Y, NextCol], [NextLine, PrevCol], [NextLine, X], [NextLine, NextCol]], L2),
+													   assert(pos_jogadas_possiveis(L2)), X1 is X + 1, build_list_possible_plays_col(T, X1, Y, brancas).
+build_list_possible_plays_col([H|T], X, Y, pretas) :- H < 6, retract(pos_jogadas_possiveis(L)), PrevCol is X - 1, NextCol is X + 1, PrevLine is Y - 1, NextLine is Y + 1, 
+													  append(L, [[PrevLine, PrevCol], [PrevLine, X], [PrevLine, NextCol], [Y, PrevCol], [Y, NextCol], [NextLine, PrevCol], [NextLine, X], [NextLine, NextCol]], L2),
+													  assert(pos_jogadas_possiveis(L2)), X1 is X + 1, build_list_possible_plays_col(T, X1, Y, pretas).
 
 % Modos de jogo
 % Modo de jogo atual
@@ -110,12 +113,13 @@ posicionar_peca(bispo, X, Y, T, T2, pretas) :- jogadas_possiveis(todas), casa_pr
 xadrersi :- tabuleiro(T), xadrersi(T, brancas).
 
 xadrersi(Tabuleiro, E) :- modo_de_jogo_atual(humano_vs_humano), !,
+						  write("Turno: "), write(E), nl,
 						  writeChessboard(Tabuleiro),
 						  write("Peca: "), read(P), nl,
 						  write("Coordenadas: \nX: "), read(X), nl,
 						  write("Y: "), read(Y),
 						  posicionar_peca(P, X, Y, Tabuleiro, T2, E),
-						  (Tabuleiro \= T2, game_end(T2); Tabuleiro \= T2, E = brancas, build_list_possible_plays(T2, pretas), xadrersi(T2, pretas); Tabuleiro \= T2, build_list_possible_plays(T2, brancas), xadrersi(T2, brancas); xadrersi(Tabuleiro, E)).
+						  (Tabuleiro \= T2, game_end(T2); Tabuleiro \= T2, E = brancas, build_list_possible_plays(T2, pretas), xadrersi(T2, pretas); Tabuleiro \= T2, E = pretas, build_list_possible_plays(T2, brancas), xadrersi(T2, brancas); xadrersi(Tabuleiro, E)).
 							
 % Verficação de término de jogo
 game_end(Tabuleiro) :- quantidade_de_pecas(rei, brancas, 0),
@@ -131,8 +135,7 @@ game_end(Tabuleiro) :- quantidade_de_pecas(rei, brancas, 0),
 					   executar_ataques(Tabuleiro),
 					   writeChessboard(Tabuleiro),
 					   pontos(pretas, PP), pontos(brancas, PB),
-					   (PP > PB, write("As pretas venceram o jogo!"), nl; PB > PP, write("As brancas venceram o jogo!"), nl; PP = PB, write("O jogo terminou num empate!"), nl), 
-					   make.
+					   (PP > PB, write("As pretas venceram o jogo!"), nl; PB > PP, write("As brancas venceram o jogo!"), nl; PP = PB, write("O jogo terminou num empate!"), nl).
 
 % Rotina de cálculo de ataque
 executar_ataques(T) :- verificar_ataques_linha(T, 1, T).
