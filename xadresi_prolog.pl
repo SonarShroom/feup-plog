@@ -21,6 +21,10 @@
 pontos(brancas, 0).
 pontos(pretas, 0).
 
+% Troca de equipa
+trocar_equipa(brancas, pretas).
+trocar_equipa(pretas, brancas).
+
 % Jogadas possíveis
 % Quando jogadas_possiveis(todas) isto significa todas exceto o rei, visto que os reis têm de ser ambos a primeira e a ultima peça a ser posicionados.
 % Estados possíveis: rei, todas, rainha
@@ -40,10 +44,11 @@ build_list_possible_plays_col([], _, _, _) :- !.
 build_list_possible_plays_col([0|T], X, Y, E) :- X1 is X + 1, build_list_possible_plays_col(T, X1, Y, E), !.
 build_list_possible_plays_col([H|T], X, Y, brancas) :- H > 5, retract(pos_jogadas_possiveis(L)), PrevCol is X - 1, NextCol is X + 1, PrevLine is Y - 1, NextLine is Y + 1, 
 													   append(L, [[PrevLine, PrevCol], [PrevLine, X], [PrevLine, NextCol], [Y, PrevCol], [Y, NextCol], [NextLine, PrevCol], [NextLine, X], [NextLine, NextCol]], L2),
-													   assert(pos_jogadas_possiveis(L2)), X1 is X + 1, build_list_possible_plays_col(T, X1, Y, brancas).
+													   assert(pos_jogadas_possiveis(L2)), X1 is X + 1, build_list_possible_plays_col(T, X1, Y, brancas), !. 
 build_list_possible_plays_col([H|T], X, Y, pretas) :- H < 6, retract(pos_jogadas_possiveis(L)), PrevCol is X - 1, NextCol is X + 1, PrevLine is Y - 1, NextLine is Y + 1, 
 													  append(L, [[PrevLine, PrevCol], [PrevLine, X], [PrevLine, NextCol], [Y, PrevCol], [Y, NextCol], [NextLine, PrevCol], [NextLine, X], [NextLine, NextCol]], L2),
-													  assert(pos_jogadas_possiveis(L2)), X1 is X + 1, build_list_possible_plays_col(T, X1, Y, pretas).
+													  assert(pos_jogadas_possiveis(L2)), X1 is X + 1, build_list_possible_plays_col(T, X1, Y, pretas), !.
+build_list_possible_plays_col([_|T], X, Y, E) :- X1 is X + 1, build_list_possible_plays_col(T, X, Y, E).
 
 % Modos de jogo
 % Modo de jogo atual
@@ -96,21 +101,23 @@ posicionar_peca(bispo, X, Y, T, T, E) :- casa_primeiro_bispo(E, Cor), cor_da_cas
 % Brancas
 posicionar_peca(rei, X, Y, T, T2, brancas) :- jogadas_possiveis(rei), retract(jogadas_possiveis(_)), assert(jogadas_possiveis(todas)), retract(quantidade_de_pecas(rei, brancas, 1)), assert(quantidade_de_pecas(rei, brancas, 0)), replace(T, X, Y, 1, T2), !.
 posicionar_peca(rainha, X, Y, T, T2, brancas) :- (jogadas_possiveis(rainha), retract(jogadas_possiveis(_)), assert(jogadas_possiveis(todas)); jogadas_possiveis(todas), retract(jogadas_possiveis(_)), assert(jogadas_possiveis(rainha))), retract(quantidade_de_pecas(rainha, brancas, 1)), assert(quantidade_de_pecas(rainha, brancas, 0)), replace(T, X, Y, 2, T2), !.
-posicionar_peca(cavalo, X, Y, T, T2, brancas) :- jogadas_possiveis(todas), retract(quantidade_de_pecas(cavalo, brancas, Q)), assert(quantidade_de_pecas(cavalo, brancas, Q - 1)), replace(T, X, Y, 3, T2), !.
-posicionar_peca(torre, X, Y, T, T2, brancas) :- jogadas_possiveis(todas), retract(quantidade_de_pecas(torre, brancas, Q)), assert(quantidade_de_pecas(torre, brancas, Q - 1)), replace(T, X, Y, 4, T2), !.
-posicionar_peca(bispo, X, Y, T, T2, brancas) :- jogadas_possiveis(todas), casa_primeiro_bispo(brancas, nao_existe), cor_da_casa(X, Y, Cor), retract(casa_primeiro_bispo(brancas, _)), assert(casa_primeiro_bispo(brancas, Cor)), retract(quantidade_de_pecas(bispo, brancas, Q)), assert(quantidade_de_pecas(bispo, brancas, Q - 1)), replace(T, X, Y, 5, T2), !.
-posicionar_peca(bispo, X, Y, T, T2, brancas) :- jogadas_possiveis(todas), casa_primeiro_bispo(brancas, _), cor_da_casa(X, Y, _), retract(quantidade_de_pecas(bispo, brancas, Q)), assert(quantidade_de_pecas(bispo, brancas, Q - 1)), replace(T, X, Y, 5, T2), !.
+posicionar_peca(cavalo, X, Y, T, T2, brancas) :- jogadas_possiveis(todas), retract(quantidade_de_pecas(cavalo, brancas, Q)), Q1 is Q - 1, assert(quantidade_de_pecas(cavalo, brancas, Q1)), replace(T, X, Y, 3, T2), !.
+posicionar_peca(torre, X, Y, T, T2, brancas) :- jogadas_possiveis(todas), retract(quantidade_de_pecas(torre, brancas, Q)), Q1 is Q - 1, assert(quantidade_de_pecas(torre, brancas, Q1)), replace(T, X, Y, 4, T2), !.
+posicionar_peca(bispo, X, Y, T, T2, brancas) :- jogadas_possiveis(todas), casa_primeiro_bispo(brancas, nao_existe), cor_da_casa(X, Y, Cor), retract(casa_primeiro_bispo(brancas, _)), assert(casa_primeiro_bispo(brancas, Cor)), retract(quantidade_de_pecas(bispo, brancas, Q)), Q1 is Q - 1, assert(quantidade_de_pecas(bispo, brancas, Q1)), replace(T, X, Y, 5, T2), !.
+posicionar_peca(bispo, X, Y, T, T2, brancas) :- jogadas_possiveis(todas), casa_primeiro_bispo(brancas, _), cor_da_casa(X, Y, _), retract(quantidade_de_pecas(bispo, brancas, Q)), Q1 is Q - 1, assert(quantidade_de_pecas(bispo, brancas, Q1)), replace(T, X, Y, 5, T2), !.
 
 % Pretas
 posicionar_peca(rei, X, Y, T, T2, pretas) :- jogadas_possiveis(rei), retract(jogadas_possiveis(_)), assert(jogadas_possiveis(todas)), retract(quantidade_de_pecas(rei, pretas, 1)), assert(quantidade_de_pecas(rei, pretas, 0)), replace(T, X, Y, 6, T2), !.
 posicionar_peca(rainha, X, Y, T, T2, pretas) :- (jogadas_possiveis(rainha), retract(jogadas_possiveis(_)), assert(jogadas_possiveis(todas)); jogadas_possiveis(todas), retract(jogadas_possiveis(_)), assert(jogadas_possiveis(rainha))), retract(quantidade_de_pecas(rainha, pretas, 1)), assert(quantidade_de_pecas(rainha, pretas, 0)), replace(T, X, Y, 7, T2), !.
-posicionar_peca(cavalo, X, Y, T, T2, pretas) :- jogadas_possiveis(todas), retract(quantidade_de_pecas(cavalo, pretas, Q)), assert(quantidade_de_pecas(cavalo, pretas, Q - 1)), replace(T, X, Y, 8, T2), !.
-posicionar_peca(torre, X, Y, T, T2, pretas) :- jogadas_possiveis(todas), retract(quantidade_de_pecas(torre, pretas, Q)), assert(quantidade_de_pecas(torre, pretas, Q - 1)), replace(T, X, Y, 9, T2), !.
-posicionar_peca(bispo, X, Y, T, T2, pretas) :- jogadas_possiveis(todas), casa_primeiro_bispo(pretas, nao_existe), cor_da_casa(X, Y, Cor), retract(casa_primeiro_bispo(pretas, _)), assert(casa_primeiro_bispo(pretas, Cor)), retract(quantidade_de_pecas(bispo, pretas, Q)), assert(quantidade_de_pecas(bispo, pretas, Q - 1)), replace(T, X, Y, 10, T2), !.
-posicionar_peca(bispo, X, Y, T, T2, pretas) :- jogadas_possiveis(todas), casa_primeiro_bispo(pretas, _), cor_da_casa(X, Y, _), retract(quantidade_de_pecas(bispo, pretas, Q)), assert(quantidade_de_pecas(bispo, pretas, Q - 1)), replace(T, X, Y, 10, T2), !.
+posicionar_peca(cavalo, X, Y, T, T2, pretas) :- jogadas_possiveis(todas), retract(quantidade_de_pecas(cavalo, pretas, Q)), Q1 is Q - 1, assert(quantidade_de_pecas(cavalo, pretas, Q1)), replace(T, X, Y, 8, T2), !.
+posicionar_peca(torre, X, Y, T, T2, pretas) :- jogadas_possiveis(todas), retract(quantidade_de_pecas(torre, pretas, Q)), Q1 is Q - 1, assert(quantidade_de_pecas(torre, pretas, Q1)), replace(T, X, Y, 9, T2), !.
+posicionar_peca(bispo, X, Y, T, T2, pretas) :- jogadas_possiveis(todas), casa_primeiro_bispo(pretas, nao_existe), cor_da_casa(X, Y, Cor), retract(casa_primeiro_bispo(pretas, _)), assert(casa_primeiro_bispo(pretas, Cor)), retract(quantidade_de_pecas(bispo, pretas, Q)), Q1 is Q - 1, assert(quantidade_de_pecas(bispo, pretas, Q1)), replace(T, X, Y, 10, T2), !.
+posicionar_peca(bispo, X, Y, T, T2, pretas) :- jogadas_possiveis(todas), casa_primeiro_bispo(pretas, _), cor_da_casa(X, Y, _), retract(quantidade_de_pecas(bispo, pretas, Q)), Q1 is Q - 1, assert(quantidade_de_pecas(bispo, pretas, Q1)), replace(T, X, Y, 10, T2), !.
 														   
 % Ciclo de jogo
 xadrersi :- tabuleiro(T), xadrersi(T, brancas).
+
+xadrersi(Tabuleiro, _) :- game_end(Tabuleiro), !.
 
 xadrersi(Tabuleiro, E) :- modo_de_jogo_atual(humano_vs_humano), !,
 						  write("Turno: "), write(E), nl,
@@ -118,9 +125,12 @@ xadrersi(Tabuleiro, E) :- modo_de_jogo_atual(humano_vs_humano), !,
 						  write("Peca: "), read(P), nl,
 						  write("Coordenadas: \nX: "), read(X), nl,
 						  write("Y: "), read(Y),
-						  posicionar_peca(P, X, Y, Tabuleiro, T2, E),
-						  (Tabuleiro \= T2, game_end(T2); Tabuleiro \= T2, E = brancas, build_list_possible_plays(T2, pretas), xadrersi(T2, pretas); Tabuleiro \= T2, E = pretas, build_list_possible_plays(T2, brancas), xadrersi(T2, brancas); xadrersi(Tabuleiro, E)).
-							
+						  posicionar_peca(P, X, Y, Tabuleiro, T2, E), xadrersi(Tabuleiro, T2, E).
+						  
+xadrersi(T, T, E) :- xadrersi(T, E), !.
+
+xadrersi(_, T2, E) :- trocar_equipa(E, E2), build_list_possible_plays(T2, E2), xadrersi(T2, E2), !.
+
 % Verficação de término de jogo
 game_end(Tabuleiro) :- quantidade_de_pecas(rei, brancas, 0),
 					   quantidade_de_pecas(rainha, brancas, 0),
@@ -224,23 +234,23 @@ atk_at_line_pos(P, [X|_], Line) :- X > 0, X < 9, !, nth1(X, Line, PD), verificar
 
 
 % Verificação da cor da casa
-cor_da_casa(X, Y, branca) :- Y mod 2 =:= 1, (X - 1) mod 2 =:= 0, !.
+cor_da_casa(X, Y, branca) :- (Y mod 2 =:= 1, X mod 2 =:= 1; Y mod 2 =:= 0, X mod 2 =:= 0), !.
 cor_da_casa(X, Y, preta) :- \+ cor_da_casa(X, Y, branca).
 
 % Code utilities
 % Substitui um elemento numa matriz dadas as suas coordenadas X, Y: replace/5
-replace( [L|Ls] , 1 , Y , Z , [R|Ls] ) :- % once we find the desired row,
-  replace_column(L,Y,Z,R), !.			  % - we replace specified column, and we're done.
+replace( [L|Ls] , X , 1 , Z , [R|Ls] ) :- % once we find the desired row,
+  replace_column(L,X,Z,R), !.			  % - we replace specified column, and we're done.
 replace( [L|Ls] , X , Y , Z , [L|Rs] ) :- % if we haven't found the desired row yet
-  X > 1,                                  % - and the row offset is positive,
-  X1 is X-1,                              % - we decrement the row offset
-  replace( Ls , X1 , Y , Z , Rs ).		  % - and recurse down
+  Y > 1,                                  % - and the row offset is positive,
+  Y1 is Y-1,                              % - we decrement the row offset
+  replace( Ls , X , Y1 , Z , Rs ).		  % - and recurse down
 
 replace_column( [_|Cs] , 1 , Z , [Z|Cs] ) .  % once we find the specified offset, just make the substitution and finish up.
-replace_column( [C|Cs] , Y , Z , [C|Rs] ) :- % otherwise,
-  Y > 1,                                     % - assuming that the column offset is positive,
-  Y1 is Y-1,                                 % - we decrement it
-  replace_column( Cs , Y1 , Z , Rs ).		 % - and recurse down.
+replace_column( [C|Cs] , X , Z , [C|Rs] ) :- % otherwise,
+  X > 1,                                     % - assuming that the column offset is positive,
+  X1 is X-1,                                 % - we decrement it
+  replace_column( Cs , X1 , Z , Rs ).		 % - and recurse down.
 
 % Escreve o tabuleiro no ecrã: writeChessboard/1
 writeChessboard(Tabuleiro) :- write(" _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ "), nl,
