@@ -15,15 +15,21 @@
 
 % Modulos externos
 :- use_module(library(lists)).
+:- use_module(library(random)).
 
 % Pontuação
 :- dynamic pontos/2.
 pontos(brancas, 0).
 pontos(pretas, 0).
 
-% Troca de equipa
+% Troca de equipa durante o jogo.
 trocar_equipa(brancas, pretas).
 trocar_equipa(pretas, brancas).
+
+% Equipa utilizada para jogos com computador
+:- dynamic equipa_humano/1.
+equipa_humano(brancas).
+trocar_equipa_humano :- retract(equipa_humano(E)), trocar_equipa(E, E2), assert(equipa_humano(E2)), write("Equipa: "), write(E2), nl.
 
 % Jogadas possíveis
 % Quando jogadas_possiveis(todas) isto significa todas exceto o rei, visto que os reis têm de ser ambos a primeira e a ultima peça a ser posicionados.
@@ -44,11 +50,11 @@ build_list_possible_plays_col([], _, _, _) :- !.
 build_list_possible_plays_col([0|T], X, Y, E) :- X1 is X + 1, build_list_possible_plays_col(T, X1, Y, E), !.
 build_list_possible_plays_col([H|T], X, Y, brancas) :- H > 5, retract(pos_jogadas_possiveis(L)), PrevCol is X - 1, NextCol is X + 1, PrevLine is Y - 1, NextLine is Y + 1, 
 													   append(L, [[PrevLine, PrevCol], [PrevLine, X], [PrevLine, NextCol], [Y, PrevCol], [Y, NextCol], [NextLine, PrevCol], [NextLine, X], [NextLine, NextCol]], L2),
-													   assert(pos_jogadas_possiveis(L2)), X1 is X + 1, build_list_possible_plays_col(T, X1, Y, brancas), !. 
+													   assert(pos_jogadas_possiveis(L2)), X1 is X + 1, build_list_possible_plays_col(T, X1, Y, brancas), !.
 build_list_possible_plays_col([H|T], X, Y, pretas) :- H < 6, retract(pos_jogadas_possiveis(L)), PrevCol is X - 1, NextCol is X + 1, PrevLine is Y - 1, NextLine is Y + 1, 
 													  append(L, [[PrevLine, PrevCol], [PrevLine, X], [PrevLine, NextCol], [Y, PrevCol], [Y, NextCol], [NextLine, PrevCol], [NextLine, X], [NextLine, NextCol]], L2),
 													  assert(pos_jogadas_possiveis(L2)), X1 is X + 1, build_list_possible_plays_col(T, X1, Y, pretas), !.
-build_list_possible_plays_col([_|T], X, Y, E) :- X1 is X + 1, build_list_possible_plays_col(T, X, Y, E).
+build_list_possible_plays_col([_|T], X, Y, E) :- X1 is X + 1, build_list_possible_plays_col(T, X1, Y, E).
 
 % Modos de jogo
 % Modo de jogo atual
@@ -94,9 +100,23 @@ casa_primeiro_bispo(pretas, nao_existe).
 
 % Posicionamento das peças
 % Movimentos não permitidos
-posicionar_peca(_, X, Y, T, T, _) :- ((X < 1; X > 8; Y < 1; Y > 8), !, write("Posicao fora do tabuleiro. Refaca a jogada."), nl; nth1(Y, T, Line), nth1(X, Line, P), P \= 0, write("Casa nao esta vazia. Refaca a jogada."), nl; \+ pos_jogadas_possiveis(todas), pos_jogadas_possiveis(L), \+ member([X, Y], L), write("Essa jogada nao e possivel. Refaca a jogada."), nl), !.
-posicionar_peca(P, _, _, T, T, E) :- jogadas_possiveis(P2), (quantidade_de_pecas(P, E, X), X = 0, write("Nao existem mais pecas deste tipo. Refaca a jogada."), nl; P \= P2, P2 = rei, write("So pode posicionar o rei nesta jogada. Refaca a jogada."), nl; P \= P2, P2 = rainha, write("So pode posicionar a rainha nesta jogada. Refaca a jogada."), nl; P2 = todas, P = rei, write("Os reis so podem ser posicionados na primeira e ultima jogadas. Refaca a jogada."), nl), !.
-posicionar_peca(bispo, X, Y, T, T, E) :- casa_primeiro_bispo(E, Cor), cor_da_casa(X, Y, Cor), write("Não se pode colocar bispos em casas da mesma cor. Refaca a jogada.\n"), !.
+posicionar_peca(rei, X, Y, T, T2, pretas) :- quantidade_de_pecas(rei, brancas, 0),
+											 quantidade_de_pecas(rainha, brancas, 0),
+											 quantidade_de_pecas(cavalo, brancas, 0),
+											 quantidade_de_pecas(torre, brancas, 0),
+											 quantidade_de_pecas(bispo, brancas, 0),
+											 quantidade_de_pecas(rei, pretas, 1),
+											 quantidade_de_pecas(rainha, pretas, 0),
+											 quantidade_de_pecas(cavalo, pretas, 0),
+											 quantidade_de_pecas(torre, pretas, 0),
+											 quantidade_de_pecas(bispo, pretas, 0), retract(quantidade_de_pecas(rei, pretas, 1)), assert(quantidade_de_pecas(rei, pretas, 0)), replace(T, X, Y, 6, T2), !.
+posicionar_peca(P, _, _, T, T, E) :- jogadas_possiveis(P2), (quantidade_de_pecas(P, E, X), X = 0, write("Nao existem mais pecas deste tipo. Refaca a jogada."), nl; P \= P2, P2 = rei, write("So pode posicionar o rei nesta jogada. Refaca a jogada."), nl;
+															 P \= P2, P2 = rainha, write("So pode posicionar a rainha nesta jogada. Refaca a jogada."), nl;
+															 P2 = todas, P = rei, write("Os reis so podem ser posicionados na primeira e ultima jogadas. Refaca a jogada."), nl), !.
+posicionar_peca(_, X, Y, T, T, _) :- ((X < 1; X > 8; Y < 1; Y > 8), write("Posicao fora do tabuleiro. Refaca a jogada."), nl;
+									  nth1(Y, T, Line), nth1(X, Line, P), P \= 0, write("Casa nao esta vazia. Refaca a jogada."), nl;
+									  \+ pos_jogadas_possiveis(todas), pos_jogadas_possiveis(L), \+ member([Y, X], L), write("Essa jogada nao e possivel. Refaca a jogada."), nl), !.
+posicionar_peca(bispo, X, Y, T, T, E) :- casa_primeiro_bispo(E, Cor), cor_da_casa(X, Y, Cor), write("Nao se pode colocar bispos em casas da mesma cor. Refaca a jogada.\n"), !.
 
 % Brancas
 posicionar_peca(rei, X, Y, T, T2, brancas) :- jogadas_possiveis(rei), retract(jogadas_possiveis(_)), assert(jogadas_possiveis(todas)), retract(quantidade_de_pecas(rei, brancas, 1)), assert(quantidade_de_pecas(rei, brancas, 0)), replace(T, X, Y, 1, T2), !.
@@ -115,7 +135,9 @@ posicionar_peca(bispo, X, Y, T, T2, pretas) :- jogadas_possiveis(todas), casa_pr
 posicionar_peca(bispo, X, Y, T, T2, pretas) :- jogadas_possiveis(todas), casa_primeiro_bispo(pretas, _), cor_da_casa(X, Y, _), retract(quantidade_de_pecas(bispo, pretas, Q)), Q1 is Q - 1, assert(quantidade_de_pecas(bispo, pretas, Q1)), replace(T, X, Y, 10, T2), !.
 														   
 % Ciclo de jogo
-xadrersi :- tabuleiro(T), xadrersi(T, brancas).
+xadrersi :- tabuleiro(T), modo_de_jogo_atual(humano_vs_humano), xadrersi(T, brancas).
+
+xadrersi :- tabuleiro(T), modo_de_jogo_atual(humano_vs_computador), equipa_humano(E), xadrersi(T, E).
 
 xadrersi(Tabuleiro, _) :- game_end(Tabuleiro), !.
 
@@ -127,9 +149,30 @@ xadrersi(Tabuleiro, E) :- modo_de_jogo_atual(humano_vs_humano), !,
 						  write("Y: "), read(Y),
 						  posicionar_peca(P, X, Y, Tabuleiro, T2, E), xadrersi(Tabuleiro, T2, E).
 						  
+xadrersi(Tabuleiro, E) :- modo_de_jogo_atual(humano_vs_computador), equipa_humano(brancas), !,
+						  write("Turno: "), write(E), nl,
+						  writeChessboard(Tabuleiro),
+						  write("Peca: "), read(P), nl,
+						  write("Coordenadas: \nX: "), read(X), nl,
+						  write("Y: "), read(Y),
+						  posicionar_peca(P, X, Y, Tabuleiro, T2, E), xadrersi(c, Tabuleiro, T2, E).
+						  
+xadrersi(Tabuleiro, E) :- modo_de_jogo_atual(humano_vs_computador), equipa_humano(pretas), !,
+						  xadrersi(c, Tabuleiro, T2, brancas),
+						  write("Turno: "), write(pretas), nl,
+						  writeChessboard(T2),
+						  write("Peca: "), read(P), nl,
+						  write("Coordenadas: \nX: "), read(X), nl,
+						  write("Y: "), read(Y),
+						  posicionar_peca(P, X, Y, T2, T3, E), build_list_possible_plays(T3, brancas), xadrersi(T3, pretas).
+						  
 xadrersi(T, T, E) :- xadrersi(T, E), !.
 
 xadrersi(_, T2, E) :- trocar_equipa(E, E2), build_list_possible_plays(T2, E2), xadrersi(T2, E2), !.
+						  
+xadrersi(c, T, T, E) :- xadrersi(T, E), !.
+
+xadrersi(c, T, T2, E) :- trocar_equipa(E, E2), build_list_possible_plays(T2, E2), jogada_computador(T2, T3, E2), build_list_possible_plays(T3, E), xadrersi(T3, E).
 
 % Verficação de término de jogo
 game_end(Tabuleiro) :- quantidade_de_pecas(rei, brancas, 0),
@@ -144,14 +187,22 @@ game_end(Tabuleiro) :- quantidade_de_pecas(rei, brancas, 0),
 					   quantidade_de_pecas(bispo, pretas, 0),
 					   executar_ataques(Tabuleiro),
 					   writeChessboard(Tabuleiro),
-					   pontos(pretas, PP), pontos(brancas, PB),
+					   pontos(pretas, PP), pontos(brancas, PB), write("Pontos pretas: "), write(PP), nl, write("Pontos brancas: "), write(PB), nl,
 					   (PP > PB, write("As pretas venceram o jogo!"), nl; PB > PP, write("As brancas venceram o jogo!"), nl; PP = PB, write("O jogo terminou num empate!"), nl).
+					   
+% Jogadas de computador
+jogada_computador(T, T2, E) :- jogadas_possiveis(rei), pos_jogadas_possiveis(todas), random_between(1, 8, RX), random_between(1, 8, RY), jogada_computador(rei, T, T2, E, RY, RX), !.
+jogada_computador(T, T2, E) :- jogadas_possiveis(rei), pos_jogadas_possiveis(JP), random_member([JogadaFinalY|JogadaFinalX], JP), jogada_computador(rei, T, T2, E, JogadaFinalY, JogadaFinalX), !.
+jogada_computador(T, T2, E) :- jogadas_possiveis(rainha), pos_jogadas_possiveis(JP), random_member([JogadaFinalY|JogadaFinalX], JP), jogada_computador(rainha, T, T2, E, JogadaFinalY, JogadaFinalX), !.
+jogada_computador(T, T2, E) :- jogadas_possiveis(todas), pos_jogadas_possiveis(JP), random_member([JogadaFinalY|JogadaFinalX], JP), random_member(P, [rainha, cavalo, torre, bispo]), quantidade_de_pecas(P, E, Q), Q > 0, jogada_computador(P, T, T2, E, JogadaFinalY, JogadaFinalX), !.
+jogada_computador(P, T, T2, E, Y, [X|XT]) :- posicionar_peca(P, X, Y, T, T2, E).
+
 
 % Rotina de cálculo de ataque
 executar_ataques(T) :- verificar_ataques_linha(T, 1, T).
-verificar_ataques_linha([], _, _) :- write("Verificacao do tabuleiro concluida.\n"), !.
+verificar_ataques_linha([], _, _) :- !.
 verificar_ataques_linha([H|T], Y, Tabuleiro) :- verificar_ataques_coluna(H, 1, Y, Tabuleiro), Y1 is Y + 1, verificar_ataques_linha(T, Y1, Tabuleiro).
-verificar_ataques_coluna([], _, _, _) :- write("Verificacao de linha concluida.\n"), !.
+verificar_ataques_coluna([], _, _, _) :- !.
 verificar_ataques_coluna([H|T], X, Y, Tabuleiro) :- ataque(H, X, Y, Tabuleiro), X1 is X + 1, verificar_ataques_coluna(T, X1, Y, Tabuleiro).
 
 verificar_peca_ataca(_, 0) :- !.
@@ -189,7 +240,7 @@ ataque(10, X, Y, T) :- atk_cross_bishop_positions(10, X, Y, 7, T).
 %	1	2	3
 %	4	R	5
 %	6	7	8
-atk_all_directions(_, _, _, 0, _) :- write("Finished atacking all directions."), !.
+atk_all_directions(_, _, _, 0, _) :- !.
 atk_all_directions(P, X, Y, Adder, T) :- PrevCol is X - Adder, NextCol is X + Adder, PrevLine is Y - Adder, NextLine is Y + Adder,
 										 atk_list_positions(P, [[PrevLine, PrevCol], [PrevLine, X], [PrevLine, NextCol], [Y, PrevCol], [Y, NextCol], [NextLine, PrevCol], [NextLine, X], [NextLine, NextCol]], T),
 										 Adder1 is Adder - 1,
@@ -203,7 +254,7 @@ atk_horse_positions(P, X, Y, T) :- PrevLine1 is Y - 1, NextLine1 is Y + 1, PrevL
 %	-	1	-
 %	2	T	3
 %	-	4	-
-atk_cross_positions(_, _, _, 0, _) :- write("Finished atacking all cross directions."), !.
+atk_cross_positions(_, _, _, 0, _) :- !.
 atk_cross_positions(P, X, Y, Adder, T) :- PrevCol is X - Adder, NextCol is X + Adder, PrevLine is Y - Adder, NextLine is Y + Adder,
 										  atk_list_positions(P, [[PrevLine, X], [NextLine, X], [Y, PrevCol], [Y, NextCol]], T),
 										  Adder1 is Adder - 1,
@@ -214,7 +265,7 @@ atk_cross_positions(P, X, Y, Adder, T) :- PrevCol is X - Adder, NextCol is X + A
 %	1	-	2
 %	-	B	-
 %	3	-	4
-atk_cross_bishop_positions(_, _, _, 0, _) :- write("Finished atacking all cross directions."), !.
+atk_cross_bishop_positions(_, _, _, 0, _) :- !.
 atk_cross_bishop_positions(P, X, Y, Adder, T) :- PrevCol is X - Adder, NextCol is X + Adder, PrevLine is Y - Adder, NextLine is Y + Adder,
 												 atk_list_positions(P, [[PrevLine, PrevCol], [PrevLine, NextCol], [NextLine, PrevCol], [NextLine, NextCol]], T),
 												 Adder1 is Adder - 1,
@@ -225,11 +276,11 @@ atk_list_positions(_, [], _) :- !.
 atk_list_positions(P, [Pos|Positions], T) :- atk_at_position(P, Pos, T), atk_list_positions(P, Positions, T).
 
 % Dada uma lista [Y, X], obtem a linha Y do tabuleiro e ataca uma pos X dessa linha.
-atk_at_position(_, [Y|_], _) :- (Y < 1; Y > 8), write("Y invalido.\n"), !.
+atk_at_position(_, [Y|_], _) :- (Y < 1; Y > 8), !.
 atk_at_position(P, [Y|X], T) :- Y > 0, Y < 9, !, nth1(Y, T, Line), atk_at_line_pos(P, X, Line).
 
 % Dada uma linha do tabuleiro, e uma pos X, verifica o ataque entre a peça P e a peça defensora PD.
-atk_at_line_pos(_, [X|_], _) :- (X < 1; X > 8), write("X invalido."), !.
+atk_at_line_pos(_, [X|_], _) :- (X < 1; X > 8), !.
 atk_at_line_pos(P, [X|_], Line) :- X > 0, X < 9, !, nth1(X, Line, PD), verificar_peca_ataca(P, PD).
 
 
